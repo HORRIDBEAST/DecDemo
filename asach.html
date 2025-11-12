@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h2>Supabase Token Generator</h2>
+    <button onclick="signIn()">Sign In and Get Token</button>
+    <div id="result"></div>
+    
+    <script>
+        // Initialize Supabase client
+        const { createClient } = supabase;
+        const supabaseClient = createClient(
+            'https://uampjbbopcxwtyqdorpd.supabase.co', // Replace with your actual Supabase URL
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVhbXBqYmJvcGN4d3R5cWRvcnBkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc3NzIwMTUsImV4cCI6MjA3MzM0ODAxNX0.55rBxN4PZKNUj3vqNYlwNLtH5f_0hos3w0q-cD0fozU' // Replace with your actual anon key
+        );
+        
+        async function signIn() {
+            try {
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                    email: 'test@example.com',
+                    password: 'password123'
+                });
+                
+                if (error) {
+                    document.getElementById('result').innerHTML = 
+                        '<div style="color: red;">Error: ' + error.message + '</div>';
+                } else {
+                    document.getElementById('result').innerHTML = 
+                        '<div style="color: green;">' +
+                        '<h3>Success!</h3>' +
+                        '<p><strong>Access Token:</strong></p>' +
+                        '<textarea style="width:100%;height:100px;">' + data.session.access_token + '</textarea>' +
+                        '<p>Copy the token above and use it in Postman</p>' +
+                        '</div>';
+                    console.log('Access Token:', data.session.access_token);
+                }
+            } catch (err) {
+                document.getElementById('result').innerHTML = 
+                    '<div style="color: red;">Error: ' + err.message + '</div>';
+            }
+        }
+    </script>
+</body>
+</html>

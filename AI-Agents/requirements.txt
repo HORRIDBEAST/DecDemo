@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+pydantic
+python-dotenv
+langchain
+langgraph
+langsmith
+langchain-openai
+opencv-python
+pillow
+pytesseract
+requests
+web3
