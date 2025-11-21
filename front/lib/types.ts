@@ -8,7 +8,7 @@ export enum ClaimStatus {
   APPROVED = 'approved',
   REJECTED = 'rejected',
   SETTLED = 'settled',
-  DRAFT = "DRAFT",
+  DRAFT = "draft",
 }
 
 export enum ClaimType {

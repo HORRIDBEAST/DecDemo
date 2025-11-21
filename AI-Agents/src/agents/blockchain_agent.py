@@ -128,7 +128,7 @@ class BlockchainAgent(BaseAgent):
             ).build_transaction({
                 "from": self.account.address,
                 "nonce": nonce, #self.w3.eth.get_transaction_count(self.account.address),
-                "gas": 1000000,
+                "gas": 500000,
                 "gasPrice": self.w3.to_wei("30", "gwei"),
                 "chainId": 80002  # Polygon Amoy
             })
@@ -144,7 +144,7 @@ class BlockchainAgent(BaseAgent):
             
             if receipt.status == 1:
                 logger.info(f"✅ Claim submitted successfully: {tx_hash.hex()}")
-                return True, tx_hash.hex()
+                return True, self.w3.to_hex(tx_hash)
             else:
                 logger.error(f"❌ Claim submission failed with status: {receipt.status}")
                 return False, None
@@ -226,7 +226,7 @@ class BlockchainAgent(BaseAgent):
             
             if receipt.status == 1:
                 logger.info(f"✅ AI assessment updated successfully: {tx_hash.hex()}")
-                return True, tx_hash.hex()
+                return True, self.w3.to_hex(tx_hash)
             else:
                 logger.error(f"❌ AI assessment update failed with status: {receipt.status}")
                 return False, None

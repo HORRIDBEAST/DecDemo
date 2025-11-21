@@ -1,9 +1,8 @@
-// app/(dashboard)/claims/page.tsx
 'use client';
 
 import { useState } from 'react';
-import { useClaims } from '@/hooks/use-claims';
-import { ClaimCard } from '@/components/claims/claim-card';
+import { useClaims } from '@/hooks/use-claims'; // Assuming you have this hook
+import { ClaimCard } from '@/components/claims/claim-card'; // Assuming you have this component
 import { Skeleton } from '@/components/ui/skeleton';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
@@ -11,7 +10,7 @@ import { Plus } from 'lucide-react';
 
 export default function ClaimsListPage() {
   const [page, setPage] = useState(1);
-  const { data, error, isLoading } = useClaims(page);
+  const { data, error, isLoading } = useClaims(page); // Using the hook
 
   const renderContent = () => {
     if (isLoading) {

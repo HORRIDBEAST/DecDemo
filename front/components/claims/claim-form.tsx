@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -34,6 +34,25 @@ const claimFormSchema = z.object({
 
 type ClaimFormValues = z.infer<typeof claimFormSchema>;
 
+
+// Simple hook to persist form data
+function usePersistForm(key: string, form: any) {
+  useEffect(() => {
+    const savedData = localStorage.getItem(key);
+    if (savedData) {
+      const parsed = JSON.parse(savedData);
+      form.reset(parsed); // Populate form with saved data
+    }
+  }, [key, form]);
+
+  useEffect(() => {
+    const subscription = form.watch((value: any) => {
+      localStorage.setItem(key, JSON.stringify(value));
+    });
+    return () => subscription.unsubscribe();
+  }, [key, form]);
+}
+
 export function ClaimForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -49,6 +68,7 @@ export function ClaimForm() {
     },
   });
 
+  usePersistForm('claim-draft', form);
   // Convert string to number manually before sending to API
   async function onSubmit(data: ClaimFormValues) {
     setIsSubmitting(true);
@@ -65,6 +85,7 @@ export function ClaimForm() {
       
       toast.dismiss();
       toast.success('Claim draft created successfully!');
+           localStorage.removeItem('claim-draft');
       router.push(`/claims/${newClaim.id}`); 
       
     } catch (error: any) {

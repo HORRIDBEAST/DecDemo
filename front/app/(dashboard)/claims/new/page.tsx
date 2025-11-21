@@ -20,12 +20,16 @@ import { Loader2 } from 'lucide-react';
 // 1. Define the form schema
 const claimFormSchema = z.object({
   type: z.nativeEnum(ClaimType, {
-    required_error: "Please select a claim type.",
+    message: "Please select a claim type.",
   }),
-  requestedAmount: z.coerce.number().min(1, "Amount must be greater than 0."),
-  description: z.string().min(20, "Please provide a detailed description."),
+ requestedAmount: z.string()
+    .min(1, "Please enter an amount.")
+    .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
+      message: "Amount must be a valid number greater than 0.",
+    }),
+  description: z.string().min(20, "Please provide a detailed description (at least 20 characters)."),
   incidentDate: z.string().min(1, "Please select an incident date."),
-  location: z.string().min(5, "Please provide a location."),
+  location: z.string().min(5, "Please provide a location (at least 5 characters)."),
 });
 
 type ClaimFormValues = z.infer<typeof claimFormSchema>;
@@ -37,8 +41,11 @@ export default function NewClaimPage() {
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(claimFormSchema),
     defaultValues: {
-      description: "",
-      location: "",
+      type: undefined,
+      requestedAmount: '',
+      description: '',
+      incidentDate: '',
+      location: '',
     },
   });
 
@@ -47,16 +54,19 @@ export default function NewClaimPage() {
     setIsSubmitting(true);
     toast.loading('Creating claim draft...');
 
-    try {
-      // 3. Call the API to create the draft
-      const newClaim = await api.createClaim(data);
+     try {
+      // Convert requestedAmount from string to number
+      const claimData = {
+        ...data,
+        requestedAmount: Number(data.requestedAmount),
+      };
+      
+      const newClaim = await api.createClaim(claimData);
       
       toast.dismiss();
       toast.success('Claim draft created successfully!');
-      
-      // 4. Redirect to the file upload page
-      router.push(`/claims/${newClaim.id}/upload`); // <-- THIS IS THE NEW PAGE WE NEED TO BUILD
-      
+      // 5. FIX: Redirect to the new /upload page (which I will provide next)
+router.push(`/claims/${newClaim.id}`);      
     } catch (error: any) {
       toast.dismiss();
       toast.error(`Failed to create draft: ${error.message}`);
