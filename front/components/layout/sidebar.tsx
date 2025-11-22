@@ -4,22 +4,31 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Home, FileText, Plus, Shield } from 'lucide-react';
+import { useAuth } from '@/context/auth-context'; // Import Auth Context
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'My Claims', href: '/claims', icon: FileText },
   { name: 'New Claim', href: '/claims/new', icon: Plus },
-  { name: 'Admin Panel', href: '/admin', icon: Shield },
+  { name: 'Admin Panel', href: '/admin', icon: Shield, adminOnly: true }, // Mark as admin only
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
+  const { user, loading } = useAuth(); // Get user data
+
+  if (loading) return null;
 
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16">
       <div className="flex-1 flex flex-col min-h-0 bg-white border-r border-slate-200">
         <nav className="flex-1 px-4 py-4 space-y-1">
           {navigation.map((item) => {
+            // --- LOGIC FIX: Hide Admin Panel if user is not admin ---
+            if (item.adminOnly && user?.role !== 'admin') {
+              return null;
+            }
+
             const Icon = item.icon;
             const isActive = pathname === item.href;
 
