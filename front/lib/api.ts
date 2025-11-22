@@ -27,6 +27,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
   return response.json();
 }
 
+
 export const api = {
   // === Auth ===
   login: async (supabaseToken: string): Promise<{ user: User }> => {
@@ -37,7 +38,29 @@ export const api = {
     });
     return handleResponse(res);
   },
-
+getAdminClaims: async (): Promise<Claim[]> => {
+    const res = await fetch(`${API_URL}/claims/admin/pending`, { 
+      headers: getHeaders() // ✅ FIX: Use getHeaders() instead of manual localStorage
+    });
+    if (!res.ok) throw new Error('Failed to fetch admin claims');
+    return res.json();
+  },
+  getNotifications: async (): Promise<any[]> => {
+    try {
+      const res = await fetch(`${API_URL}/users/notifications`, {
+        headers: getHeaders()
+      });
+      if (!res.ok) {
+        console.error('Failed to fetch notifications');
+        return []; // Return empty array on error
+      }
+      const data = await res.json();
+      return Array.isArray(data) ? data : []; // Ensure it's always an array
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      return []; // Return empty array on exception
+    }
+  },
   verify: async (): Promise<{ user: User }> => {
     const res = await fetch(`${API_URL}/auth/verify`, {
       method: 'POST',
