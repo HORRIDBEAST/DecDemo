@@ -73,10 +73,10 @@ async findAllPending(userId: string) {
     }
 
     // ✅ FIX: Query all claims that need review
-    const { data, error } = await supabase
+ const { data, error } = await supabase
       .from('claims')
       .select('*, users(display_name, email)')
-      .in('status', ['submitted', 'processing', 'ai_review', 'human_review']) // Include all reviewable statuses
+      .neq('status', 'draft') // Show everything except drafts
       .order('created_at', { ascending: false });
 
     if (error) {

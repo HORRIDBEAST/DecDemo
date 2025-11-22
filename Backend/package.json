@@ -35,6 +35,8 @@
     "class-validator": "^0.14.2",
     "crc-32": "^1.2.2",
     "ethers": "^6.15.0",
+    "jspdf": "^3.0.4",
+    "jspdf-autotable": "^5.0.2",
     "passport": "^0.7.0",
     "passport-custom": "^1.1.1",
     "passport-jwt": "^4.0.1",
