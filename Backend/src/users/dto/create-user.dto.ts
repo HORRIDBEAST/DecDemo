@@ -14,4 +14,8 @@ export class CreateUserDto {
   @IsOptional()
   @IsString()
   walletAddress?: string;
+
+  @IsOptional()
+  @IsString()
+  role?: string; // Add this
 }

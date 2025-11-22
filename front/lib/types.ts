@@ -21,6 +21,7 @@ export interface User {
   id: string;
   email: string;
   display_name?: string;
+  role: 'user' | 'admin'; // Add this
   wallet_address?: string;
   created_at: string;
   updated_at: string;

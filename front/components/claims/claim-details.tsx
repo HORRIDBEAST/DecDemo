@@ -1,4 +1,3 @@
-// components/claims/claim-details.tsx
 'use client';
 
 import { useState } from 'react';
@@ -11,6 +10,10 @@ import { api } from '@/lib/api';
 import { toast } from 'sonner';
 import { Loader2, AlertTriangle, CheckCircle, ExternalLink, FileText, ImageIcon } from 'lucide-react';
 import { AIProcessingIndicator } from './ai-processing-indicator';
+import { useAuth } from '@/context/auth-context';
+
+// ✅ IMPORT THE ADMIN COMPONENT
+import { ActionButtons } from '@/components/admin/action-buttons';
 
 interface ClaimDetailsProps {
   claim: Claim;
@@ -19,6 +22,10 @@ interface ClaimDetailsProps {
 
 export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { user } = useAuth();
+  
+  // ✅ Check if user is admin
+  const isAdmin = user?.role === 'admin';
 
   const handleSubmitForReview = async () => {
     setIsSubmitting(true);
@@ -41,14 +48,12 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const isProcessing = claim.status === ClaimStatus.PROCESSING;
   const hasAiAssessment = claim.ai_assessment;
   
-  // Checks if files are already uploaded
   const hasDocuments = claim.document_urls && claim.document_urls.length > 0;
   const hasPhotos = claim.damage_photo_urls && claim.damage_photo_urls.length > 0;
   const isReadyToSubmit = hasDocuments && hasPhotos;
 
   const POLYGONSCAN_URL = `https://amoy.polygonscan.com/tx/`;
   
-  // Helper to format hash (from previous fix)
   const formatTxHash = (hash: string) => hash.startsWith('0x') ? hash : `0x${hash}`;
 
   return (
@@ -71,8 +76,9 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* --- Upload Section (Conditional) --- */}
-
+        {/* --- Upload Section (Only show for non-admins if draft, or if admin wants to see it) --- */}
+        {/* Usually admins just want to see the links, not the uploaders. 
+            For now, keeping logic simple: If Draft, show uploader. */}
         {isDraft && (
           <Card>
             <CardHeader><CardTitle>Step 2: Documents & Photos</CardTitle></CardHeader>
@@ -170,31 +176,37 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
 
       {/* Right Column - Actions */}
       <div className="space-y-6">
-        <Card>
-          <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
-          <CardContent>
-            {isDraft ? (
-              <>
-                {isReadyToSubmit ? (
-                    <Button 
-                        onClick={handleSubmitForReview} 
-                        disabled={isSubmitting}
-                        className="w-full"
-                    >
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
-                        Submit for AI Review
-                    </Button>
+        
+        {/* ✅ LOGIC SWITCH: If Admin, show Admin Actions. If User, show Submit Actions. */}
+        {isAdmin ? (
+            <ActionButtons claim={claim} onUpdate={onClaimUpdate} />
+        ) : (
+            <Card>
+            <CardHeader><CardTitle>Actions</CardTitle></CardHeader>
+            <CardContent>
+                {isDraft ? (
+                <>
+                    {isReadyToSubmit ? (
+                        <Button 
+                            onClick={handleSubmitForReview} 
+                            disabled={isSubmitting}
+                            className="w-full"
+                        >
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CheckCircle className="mr-2 h-4 w-4" />}
+                            Submit for AI Review
+                        </Button>
+                    ) : (
+                        <div className="p-3 bg-yellow-50 border border-yellow-100 rounded-md text-sm text-yellow-700">
+                            Please upload both documents and photos to submit.
+                        </div>
+                    )}
+                </>
                 ) : (
-                    <div className="p-3 bg-yellow-50 border border-yellow-100 rounded-md text-sm text-yellow-700">
-                        Please upload both documents and photos to submit.
-                    </div>
+                <p className="text-sm text-slate-600">Claim submitted. Status: {claim.status.replace('_', ' ')}</p>
                 )}
-              </>
-            ) : (
-              <p className="text-sm text-slate-600">Claim submitted. Status: {claim.status.replace('_', ' ')}</p>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+            </Card>
+        )}
 
         {claim.blockchain_tx_hash && (
           <Card>
