@@ -62,7 +62,40 @@ export class ClaimsService {
 
     return data;
   }
+// Add this method inside your ClaimsService class
+async findAllPending(userId: string) {
+    const supabase = this.supabaseService.getAdminClient();
+    const { data: user } = await supabase.from('users').select('role').eq('id', userId).single();
+    
+    if (user?.role !== 'admin') {
+        this.logger.warn(`Non-admin user ${userId} attempted to access admin claims`); // Add logging
+        return [];
+    }
 
+    // ✅ FIX: Query all claims that need review
+    const { data, error } = await supabase
+      .from('claims')
+      .select('*, users(display_name, email)')
+      .in('status', ['submitted', 'processing', 'ai_review', 'human_review']) // Include all reviewable statuses
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      this.logger.error('Error fetching admin claims:', error);
+      throw error;
+    }
+
+    this.logger.log(`Fetched ${data?.length || 0} admin claims`); // Add logging
+    return data;
+}
+  private async createNotification(userId: string, title: string, message: string, claimId?: string) {
+    const supabase = this.supabaseService.getAdminClient();
+    await supabase.from('notifications').insert({
+      user_id: userId,
+      title,
+      message,
+      claim_id: claimId
+    });
+  }
   async findAll(userId: string, page = 1, limit = 10) {
     const supabase = this.supabaseService.getAdminClient();
     const offset = (page - 1) * limit;
@@ -100,22 +133,43 @@ export class ClaimsService {
     };
   }
 
+  // backend/src/claims/claims.service.ts
+
   async findOne(id: string, userId?: string) {
     const supabase = this.supabaseService.getAdminClient();
     
+    // 1. Check if the requesting user is an Admin
+    let isAdmin = false;
+    if (userId) {
+      const { data: user } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', userId)
+        .single();
+      
+      if (user?.role === 'admin') {
+        isAdmin = true;
+      }
+    }
+
+    // 2. Start building the query
+    // We add 'users(*)' so the admin can see WHO filed the claim
     let query = supabase
       .from('claims')
-      .select('*')
+      .select('*, users(display_name, email, wallet_address)') 
       .eq('id', id);
 
-    if (userId) {
+    // 3. ONLY enforce ownership if the user is NOT an Admin
+    if (userId && !isAdmin) {
       query = query.eq('user_id', userId);
     }
 
     const { data, error } = await query.single();
     
     if (error || !data) {
-      throw new NotFoundException('Claim not found');
+      // Log for debugging
+      this.logger.warn(`Claim ${id} not found for user ${userId} (Admin: ${isAdmin})`);
+      throw new NotFoundException('Claim not found or access denied');
     }
 
     return data;
@@ -187,6 +241,20 @@ async submitForProcessing(claimId: string, userId: string) {
       claimId,
       ClaimStatus.SUBMITTED
     );
+
+    const supabase = this.supabaseService.getAdminClient();
+     const { data: admins } = await supabase.from('users').select('id').eq('role', 'admin');
+     
+     if (admins) {
+       for (const admin of admins) {
+         await this.createNotification(
+           admin.id, 
+           'New Claim Submitted', 
+           `User ${userId} submitted claim ${claimId} for review.`,
+           claimId
+         );
+       }
+     }
 
     // 5. Trigger AI processing (asynchronously)
     // We don't await this, so the API returns immediately
@@ -496,6 +564,15 @@ async submitForProcessing(claimId: string, userId: string) {
     }
 
     this.logger.log(`[Claim ${claimId}] Claim approved successfully in database`);
+
+    // 🔔 NOTIFICATION TRIGGER
+    // This sends the message to the User's Inbox
+    await this.createNotification(
+      claim.user_id, // This is the user's ID
+      'Claim Approved! 🎉',
+      `Your claim #${claimId.substring(0,8)} has been approved for $${approvedAmount}.`,
+      claimId
+    );
 
     // Only try blockchain if claim was recorded during AI processing
     if (claim.blockchain_tx_hash) {

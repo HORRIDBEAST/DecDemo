@@ -15,6 +15,12 @@ export class UsersController {
     return this.usersService.findById(req.user.id);
   }
 
+  @Get('notifications')
+  async getNotifications(@Request() req) {
+    // You'll need to add getNotifications to UsersService
+    return this.usersService.getNotifications(req.user.id);
+  }
+
   @Patch('me')
   updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(req.user.id, updateUserDto);

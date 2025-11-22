@@ -72,6 +72,15 @@ export class UsersService {
 
     return data;
   }
+  async getNotifications(userId: string) {
+    const supabase = this.supabaseService.getAdminClient();
+    const { data } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+    return data;
+  }
 
   async updateWalletAddress(userId: string, walletAddress: string) {
     // Fix: Use camelCase property name to match DTO

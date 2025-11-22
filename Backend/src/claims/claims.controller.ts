@@ -27,6 +27,13 @@ import { Multer } from 'multer';
 export class ClaimsController {
   constructor(private readonly claimsService: ClaimsService) {}
 
+  @Get('admin/pending')
+  @ApiOperation({ summary: 'Get all claims needing review (Admin)' })
+  async findAllPending(@Request() req) {
+    // In a real app, you'd add an @UseGuards(AdminGuard) here
+    return this.claimsService.findAllPending(req.user.id); // We pass ID just for logging
+  }
+
  @Post()
   @ApiOperation({ summary: 'Create a new claim draft' }) // <-- Updated summary
   async create(@Request() req, @Body() createClaimDto: CreateClaimDto) {
@@ -166,4 +173,6 @@ export class ClaimsController {
   async settle(@Param('id') id: string) {
     return this.claimsService.settleClaim(id);
   }
+  // Add this BEFORE the @Get(':id') route to avoid conflict
+  
 }
