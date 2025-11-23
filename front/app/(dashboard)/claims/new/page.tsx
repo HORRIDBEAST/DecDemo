@@ -16,13 +16,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2 } from 'lucide-react';
+import { VoiceClaimAssistant } from '@/components/claims/voice-assistant';
 
 // 1. Define the form schema
 const claimFormSchema = z.object({
   type: z.nativeEnum(ClaimType, {
     message: "Please select a claim type.",
   }),
- requestedAmount: z.string()
+  requestedAmount: z.string()
     .min(1, "Please enter an amount.")
     .refine((val) => !isNaN(Number(val)) && Number(val) > 0, {
       message: "Amount must be a valid number greater than 0.",
@@ -49,12 +50,42 @@ export default function NewClaimPage() {
     },
   });
 
+  // ✅ NEW: Handler for Voice AI Data
+  const handleVoiceData = (data: any) => {
+    console.log("Filling form with:", data);
+
+    // 1. Map the AI's JSON keys to your Form's keys
+    // Force lowercase for claimType to match your Enum
+    if (data.claimType) {
+      form.setValue('type', data.claimType.toLowerCase());
+    }
+    
+    if (data.requestedAmount) {
+      form.setValue('requestedAmount', data.requestedAmount.toString());
+    }
+    if (data.description) {
+      form.setValue('description', data.description);
+    }
+    if (data.incidentDate) {
+      form.setValue('incidentDate', data.incidentDate);
+    }
+    
+    // ✅ FIX 2: Add Location Mapping
+    if (data.location) {
+      form.setValue('location', data.location);
+    }
+
+    // 2. Force validation
+    form.trigger();
+    toast.success('Form filled by AI! Please review and upload documents.');
+  };
+
   // 2. Define the submit handler
   async function onSubmit(data: ClaimFormValues) {
     setIsSubmitting(true);
     toast.loading('Creating claim draft...');
 
-     try {
+    try {
       // Convert requestedAmount from string to number
       const claimData = {
         ...data,
@@ -65,8 +96,7 @@ export default function NewClaimPage() {
       
       toast.dismiss();
       toast.success('Claim draft created successfully!');
-      // 5. FIX: Redirect to the new /upload page (which I will provide next)
-router.push(`/claims/${newClaim.id}`);      
+      router.push(`/claims/${newClaim.id}`);      
     } catch (error: any) {
       toast.dismiss();
       toast.error(`Failed to create draft: ${error.message}`);
@@ -80,6 +110,21 @@ router.push(`/claims/${newClaim.id}`);
         <CardTitle>File a New Claim</CardTitle>
       </CardHeader>
       <CardContent>
+        
+        {/* ✅ ADD VOICE ASSISTANT HERE */}
+        <div className="mb-8 p-4 border border-blue-100 bg-blue-50 rounded-lg">
+          <VoiceClaimAssistant onFormFill={handleVoiceData} />
+        </div>
+
+        <div className="relative mb-8">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-muted-foreground">Or fill manually</span>
+          </div>
+        </div>
+
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             
@@ -182,26 +227,3 @@ router.push(`/claims/${newClaim.id}`);
     </Card>
   );
 }
-/*
-// app/(dashboard)/claims/new/page.tsx
-'use client';
-
-import { ClaimForm } from '@/components/claims/claim-form';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-
-export default function NewClaimPage() {
-  return (
-    <Card className="max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>File a New Claim</CardTitle>
-        <CardDescription>
-          Step 1: Fill out the claim details. You will upload documents on the next step.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <ClaimForm />
-      </CardContent>
-    </Card>
-  );
-}
-*/

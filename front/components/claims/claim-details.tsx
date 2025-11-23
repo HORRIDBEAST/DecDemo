@@ -8,11 +8,13 @@ import { FileUpload } from './file-upload';
 import { Button } from '@/components/ui/button';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { Loader2, AlertTriangle, CheckCircle, ExternalLink, FileText, ImageIcon, Download } from 'lucide-react';
+import { Loader2, AlertTriangle, CheckCircle, ExternalLink, FileText, ImageIcon, Download, FileBarChart } from 'lucide-react';
 import { AIProcessingIndicator } from './ai-processing-indicator';
 import { useAuth } from '@/context/auth-context';
 import { ActionButtons } from '@/components/admin/action-buttons';
-import { generateClaimReport } from '@/lib/pdf-generator'; // ✅ Import PDF generator
+import { generateClaimReport, generateDetailedAnalysisPDF } from '@/lib/pdf-generator';
+import { AiThinkingLogs } from './ai-thinking-logs';
+import { AgentFindingsReport } from '@/components/admin/ai-findings-report';
 
 interface ClaimDetailsProps {
   claim: Claim;
@@ -21,6 +23,8 @@ interface ClaimDetailsProps {
 
 export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showLogs, setShowLogs] = useState(false);
+  
   const { user } = useAuth();
   
   const isAdmin = user?.role === 'admin';
@@ -30,6 +34,8 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
 
   const handleSubmitForReview = async () => {
     setIsSubmitting(true);
+    setShowLogs(true);
+    
     toast.loading('Submitting claim for AI review...');
     try {
       await api.submitClaimForProcessing(claim.id);
@@ -39,9 +45,15 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
     } catch (error: any) {
       toast.dismiss();
       toast.error(`Submission failed: ${error.message}`);
+      setShowLogs(false);
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleAiComplete = () => {
+    setShowLogs(false); // Hide logs
+    onClaimUpdate(); // Refresh claim data to get final status
   };
 
   const hasDocuments = claim.document_urls && claim.document_urls.length > 0;
@@ -90,7 +102,28 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
           </CardContent>
         </Card>
 
-        {/* --- DOCUMENTS & PHOTOS SECTION (Visible to everyone now) --- */}
+          {isAdmin && claim.ai_assessment && (
+          <AgentFindingsReport assessment={claim.ai_assessment} />
+        )}
+
+
+        {/* ✅ NEW: Detailed AI Analysis Download Button (Admin Only) */}
+        {isAdmin && claim.ai_assessment && (
+            <div className="flex justify-start">
+                <Button 
+                    onClick={() => generateDetailedAnalysisPDF(claim)} 
+                    variant="outline" 
+                    className="border-blue-200 bg-blue-50 text-blue-700 hover:bg-blue-100"
+                >
+                    <FileBarChart className="mr-2 h-4 w-4" /> 
+                    Download Detailed Agent Analysis (PDF)
+                </Button>
+            </div>
+        )}
+
+        {/* ✅ Admin-Only Detailed Report */}
+      
+        {/* --- DOCUMENTS & PHOTOS SECTION --- */}
         <Card>
           <CardHeader><CardTitle>Evidence & Documents</CardTitle></CardHeader>
           <CardContent className="space-y-6">
@@ -161,8 +194,14 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
         </Card>
         
         {/* --- AI Progress --- */}
-        {isProcessing && (
+        {/* ✅ LOGIC UPDATE: Show if processing OR if we just clicked submit */}
+        {(isProcessing || showLogs) && (
           <AIProcessingIndicator claimId={claim.id} />
+        )}
+
+        {/* ✅ AI THINKING LOGS with completion callback */}
+        {(isProcessing || showLogs) && (
+          <AiThinkingLogs claimId={claim.id} onComplete={handleAiComplete} />
         )}
 
         {/* --- AI Result --- */}
