@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef } from 'react'; // ✅ Add useRef
 import { Claim, ClaimStatus } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClaimStatusBadge } from './claim-status-badge';
@@ -24,6 +24,7 @@ interface ClaimDetailsProps {
 export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
+  const hasSubmittedRef = useRef(false); // ✅ Track if already submitted
   
   const { user } = useAuth();
   
@@ -33,6 +34,13 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const isApproved = claim.status === ClaimStatus.APPROVED || claim.status === ClaimStatus.SETTLED;
 
   const handleSubmitForReview = async () => {
+    // ✅ Prevent duplicate calls
+    if (hasSubmittedRef.current || isSubmitting) {
+      console.log('⚠️ Submit already in progress, ignoring duplicate call');
+      return;
+    }
+    
+    hasSubmittedRef.current = true;
     setIsSubmitting(true);
     setShowLogs(true);
     
@@ -46,6 +54,7 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
       toast.dismiss();
       toast.error(`Submission failed: ${error.message}`);
       setShowLogs(false);
+      hasSubmittedRef.current = false; // ✅ Allow retry on error
     } finally {
       setIsSubmitting(false);
     }
