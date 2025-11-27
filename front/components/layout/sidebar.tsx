@@ -3,13 +3,14 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, FileText, Plus, Shield } from 'lucide-react';
+import { Home, FileText, Plus, Shield, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/context/auth-context'; // Import Auth Context
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
   { name: 'My Claims', href: '/claims', icon: FileText },
   { name: 'New Claim', href: '/claims/new', icon: Plus },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 }, // ✅ NEW
   { name: 'Admin Panel', href: '/admin', icon: Shield, adminOnly: true }, // Mark as admin only
 ];
 
