@@ -50,33 +50,28 @@ export class ClaimsService {
       throw error;
     }
 
-    // Notify user
     this.notificationGateway.notifyClaimStatusUpdate(
       userId,
       data.id,
       ClaimStatus.DRAFT
     );
 
-    // Trigger AI processing
-   // this.processClaimWithAI(data.id, data);
-
     return data;
   }
-// Add this method inside your ClaimsService class
-async findAllPending(userId: string) {
+
+  async findAllPending(userId: string) {
     const supabase = this.supabaseService.getAdminClient();
     const { data: user } = await supabase.from('users').select('role').eq('id', userId).single();
     
     if (user?.role !== 'admin') {
-        this.logger.warn(`Non-admin user ${userId} attempted to access admin claims`); // Add logging
+        this.logger.warn(`Non-admin user ${userId} attempted to access admin claims`);
         return [];
     }
 
-    // ✅ FIX: Query all claims that need review
- const { data, error } = await supabase
+    const { data, error } = await supabase
       .from('claims')
       .select('*, users(display_name, email)')
-      .neq('status', 'draft') // Show everything except drafts
+      .neq('status', 'draft')
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -84,9 +79,10 @@ async findAllPending(userId: string) {
       throw error;
     }
 
-    this.logger.log(`Fetched ${data?.length || 0} admin claims`); // Add logging
+    this.logger.log(`Fetched ${data?.length || 0} admin claims`);
     return data;
-}
+  }
+
   private async createNotification(userId: string, title: string, message: string, claimId?: string) {
     const supabase = this.supabaseService.getAdminClient();
     await supabase.from('notifications').insert({
@@ -96,6 +92,7 @@ async findAllPending(userId: string) {
       claim_id: claimId
     });
   }
+
   async findAll(userId: string, page = 1, limit = 10) {
     const supabase = this.supabaseService.getAdminClient();
     const offset = (page - 1) * limit;
@@ -133,12 +130,9 @@ async findAllPending(userId: string) {
     };
   }
 
-  // backend/src/claims/claims.service.ts
-
   async findOne(id: string, userId?: string) {
     const supabase = this.supabaseService.getAdminClient();
     
-    // 1. Check if the requesting user is an Admin
     let isAdmin = false;
     if (userId) {
       const { data: user } = await supabase
@@ -152,14 +146,11 @@ async findAllPending(userId: string) {
       }
     }
 
-    // 2. Start building the query
-    // We add 'users(*)' so the admin can see WHO filed the claim
     let query = supabase
       .from('claims')
       .select('*, users(display_name, email, wallet_address)') 
       .eq('id', id);
 
-    // 3. ONLY enforce ownership if the user is NOT an Admin
     if (userId && !isAdmin) {
       query = query.eq('user_id', userId);
     }
@@ -167,7 +158,6 @@ async findAllPending(userId: string) {
     const { data, error } = await query.single();
     
     if (error || !data) {
-      // Log for debugging
       this.logger.warn(`Claim ${id} not found for user ${userId} (Admin: ${isAdmin})`);
       throw new NotFoundException('Claim not found or access denied');
     }
@@ -189,6 +179,32 @@ async findAllPending(userId: string) {
     if (updateClaimDto.type !== undefined) updateData.type = updateClaimDto.type;
     if (updateClaimDto.description !== undefined) updateData.description = updateClaimDto.description;
     if (updateClaimDto.status !== undefined) updateData.status = updateClaimDto.status;
+    
+    // ✅ FIX: If resetting to DRAFT (Retry Flow), clear previous evidence of processing
+    if (updateClaimDto.status === ClaimStatus.DRAFT) {
+       updateData.ai_assessment = null;
+       updateData.blockchain_tx_hash = null;
+       updateData.approval_tx_hash = null;
+       updateData.settlement_tx_hash = null;
+       updateData.rejection_reason = null;
+       updateData.approved_amount = null;
+       updateData.rejected_at = null;
+       updateData.approved_at = null;
+       updateData.settled_at = null;
+       
+       // ✅ Add log entry to processing_steps indicating a retry
+       const currentClaim = await this.findOne(id, userId);
+       updateData.processing_steps = [
+         ...(currentClaim.processing_steps || []),
+         {
+           step: 'claim_reset_for_retry',
+           completed_at: new Date().toISOString(),
+           details: 'Claim reset to draft for re-submission after rejection or edits',
+         }
+       ];
+       
+       this.logger.log(`[Claim ${id}] Reset to DRAFT for retry - cleared AI assessment and blockchain records`);
+    }
     
     const { data, error } = await supabase
       .from('claims')
@@ -213,18 +229,16 @@ async findAllPending(userId: string) {
 
     return data;
   }
-async submitForProcessing(claimId: string, userId: string) {
+
+  async submitForProcessing(claimId: string, userId: string) {
     this.logger.log(`[Claim ${claimId}] Submit for processing requested by user ${userId}`);
     
-    // 1. Get the claim and ensure it belongs to the user
     const claim = await this.findOne(claimId, userId);
 
-    // 2. Validate status
     if (claim.status !== ClaimStatus.DRAFT) {
       throw new BadRequestException('Claim has already been submitted.');
     }
 
-    // 3. Validate files
     if (!claim.document_urls || claim.document_urls.length === 0) {
       throw new BadRequestException('Cannot submit claim: At least one document is required.');
     }
@@ -232,8 +246,6 @@ async submitForProcessing(claimId: string, userId: string) {
       throw new BadRequestException('Cannot submit claim: At least one damage photo is required.');
     }
 
-    // 4. Update status to 'submitted'
-    // We update the status *before* starting AI
     await this.updateClaimStatus(claimId, ClaimStatus.SUBMITTED);
     
     this.notificationGateway.notifyClaimStatusUpdate(
@@ -243,27 +255,25 @@ async submitForProcessing(claimId: string, userId: string) {
     );
 
     const supabase = this.supabaseService.getAdminClient();
-     const { data: admins } = await supabase.from('users').select('id').eq('role', 'admin');
+    const { data: admins } = await supabase.from('users').select('id').eq('role', 'admin');
      
-     if (admins) {
-       for (const admin of admins) {
-         await this.createNotification(
-           admin.id, 
-           'New Claim Submitted', 
-           `User ${userId} submitted claim ${claimId} for review.`,
-           claimId
-         );
-       }
-     }
+    if (admins) {
+      for (const admin of admins) {
+        await this.createNotification(
+          admin.id, 
+          'New Claim Submitted', 
+          `User ${userId} submitted claim ${claimId} for review.`,
+          claimId
+        );
+      }
+    }
 
-    // 5. Trigger AI processing (asynchronously)
-    // We don't await this, so the API returns immediately
     this.processClaimWithAI(claimId, claim);
     this.logger.log(`[Claim ${claimId}] AI processing triggered.`);
 
-    // 6. Return the claim in its new 'submitted' state
     return { ...claim, status: ClaimStatus.SUBMITTED };
   }
+
   async uploadDocuments(claimId: string, userId: string, files: Express.Multer.File[]) {
     const claim = await this.findOne(claimId, userId);
     const supabase = this.supabaseService.getAdminClient();
@@ -390,10 +400,8 @@ async submitForProcessing(claimId: string, userId: string) {
         90
       );
 
-      // ✅ FIX: Pass only claimId and aiResult (2 parameters)
       await this.updateClaimWithAIResult(claimId, aiResult);
 
-      // Check if blockchain transaction was successful from AI agent
       const blockchainTxHash = aiResult.metadata?.tx_hash;
       
       if (blockchainTxHash) {
@@ -453,17 +461,15 @@ async submitForProcessing(claimId: string, userId: string) {
     }
   }
 
-  // ✅ FIX: Changed signature to accept only 2 parameters
   private async updateClaimWithAIResult(claimId: string, aiResult: any) {
     const supabase = this.supabaseService.getAdminClient();
     
     const newStatus = (aiResult.fraudDetected || aiResult.requiresHumanReview)
-  ? ClaimStatus.HUMAN_REVIEW   // If fraud is found OR it needs review, send to a human
-  : ClaimStatus.AI_REVIEW;
+      ? ClaimStatus.HUMAN_REVIEW
+      : ClaimStatus.AI_REVIEW;
 
     this.logger.log(`[Claim ${claimId}] Updating with status ${newStatus}`);
 
-    // Get current claim to access user_id and processing_steps
     const { data: currentClaim, error: fetchError } = await supabase
       .from('claims')
       .select('user_id, processing_steps')
@@ -504,7 +510,6 @@ async submitForProcessing(claimId: string, userId: string) {
 
     this.logger.log(`[Claim ${claimId}] Successfully updated. Status: ${data.status}`);
     
-    // Notify user (get user_id from the fetched claim data)
     if (currentClaim?.user_id) {
       this.notificationGateway.notifyClaimStatusUpdate(
         currentClaim.user_id,
@@ -565,16 +570,13 @@ async submitForProcessing(claimId: string, userId: string) {
 
     this.logger.log(`[Claim ${claimId}] Claim approved successfully in database`);
 
-    // 🔔 NOTIFICATION TRIGGER
-    // This sends the message to the User's Inbox
     await this.createNotification(
-      claim.user_id, // This is the user's ID
+      claim.user_id,
       'Claim Approved! 🎉',
       `Your claim #${claimId.substring(0,8)} has been approved for $${approvedAmount}.`,
       claimId
     );
 
-    // Only try blockchain if claim was recorded during AI processing
     if (claim.blockchain_tx_hash) {
       try {
         this.logger.log(`[Claim ${claimId}] Recording approval on blockchain...`);
@@ -628,6 +630,14 @@ async submitForProcessing(claimId: string, userId: string) {
       this.logger.error('Error rejecting claim:', error);
       throw error;
     }
+
+    // ✅ Notify user of rejection
+    await this.createNotification(
+      claim.user_id,
+      'Claim Rejected',
+      `Your claim #${claimId.substring(0,8)} was rejected. Reason: ${reason}. You can edit and resubmit.`,
+      claimId
+    );
 
     this.notificationGateway.notifyClaimStatusUpdate(
       claim.user_id,

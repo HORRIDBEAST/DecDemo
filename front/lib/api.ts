@@ -68,7 +68,21 @@ getAdminClaims: async (): Promise<Claim[]> => {
     });
     return handleResponse(res);
   },
-
+  updateClaim: async (id: string, data: any): Promise<Claim> => {
+    const res = await fetch(`${API_URL}/claims/${id}`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+markNotificationRead: async (id: string) => {
+    const res = await fetch(`${API_URL}/users/notifications/${id}/read`, {
+      method: 'PATCH',
+      headers: getHeaders(),
+    });
+    return handleResponse(res);
+  },
   // === User ===
   getProfile: async (): Promise<User> => {
     const res = await fetch(`${API_URL}/users/me`, { headers: getHeaders() });

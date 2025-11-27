@@ -6,7 +6,7 @@ import os
 import json
 from datetime import datetime
 import logging
-import time  # <-- ADD THIS AT THE TOP OF THE FILE
+import time
 logger = logging.getLogger(__name__)
 
 class BlockchainAgent(BaseAgent):
@@ -22,12 +22,11 @@ class BlockchainAgent(BaseAgent):
         else:
             self.account = self.w3.eth.account.from_key(self.private_key)
         
-        # Complete contract ABI for all operations
         self.contract_abi = [
             {
                 "inputs": [
-                    {"name": "_claimId", "type": "uint256"},      # ✅ ADD THIS
-                    {"name": "_claimant", "type": "address"},  # ✅ Add this
+                    {"name": "_claimId", "type": "uint256"},
+                    {"name": "_claimant", "type": "address"},
                     {"name": "_claimType", "type": "uint8"},
                     {"name": "_requestedAmount", "type": "uint256"},
                     {"name": "_ipfsHash", "type": "string"}
@@ -45,7 +44,6 @@ class BlockchainAgent(BaseAgent):
                     {"name": "_recommendedAmount", "type": "uint256"},
                     {"name": "_agentReports", "type": "string[]"},
                     {"name": "_fraudDetected", "type": "bool"},
-                    # {"name": "_assessmentHash", "type": "string"}
                 ],
                 "name": "updateAIAssessment",
                 "outputs": [],
@@ -77,20 +75,19 @@ class BlockchainAgent(BaseAgent):
                 "type": "function"
             }
         ]
+
     def _get_claim_status(self, contract, claim_id):
         """Helper to read the current status of a claim from the blockchain"""
         try:
             claim_data = contract.functions.claims(claim_id).call()
-            # The 'status' enum is the 4th item (index 3) in the Claim struct
             return claim_data[3] 
         except Exception as e:
             logger.error(f"Error getting claim status for ID {claim_id}: {e}")
-            return -1 # Return an invalid status enum
+            return -1
 
     def _get_blockchain_claim_id(self, claim_id_str):
         """Convert string claim_id to blockchain-compatible integer"""
         try:
-            # Use CRC32 hash of UUID to get consistent integer ID
             from zlib import crc32
             return abs(crc32(claim_id_str.encode('utf-8'))) % (10**8)
         except Exception as e:
@@ -101,7 +98,6 @@ class BlockchainAgent(BaseAgent):
         """Check if claim exists on blockchain"""
         try:
             claim_data = contract.functions.claims(claim_id).call()
-            # Check if claim ID is non-zero (exists)
             exists = claim_data[0] != 0
             logger.info(f"Claim {claim_id} exists on blockchain: {exists}")
             return exists
@@ -109,16 +105,54 @@ class BlockchainAgent(BaseAgent):
             logger.error(f"Error checking claim existence for ID {claim_id}: {e}")
             return False
 
+    def _get_available_claim_id(self, contract, base_claim_id_str):
+        """
+        Finds a free ID on the blockchain. 
+        If the base ID is taken/closed, it tries adding suffixes (-retry-1, -retry-2).
+        Returns: (blockchain_claim_id, exists_and_active)
+        """
+        max_retries = 5
+        
+        for i in range(max_retries + 1):
+            # Create a variation of the ID (e.g., "uuid", "uuid-retry-1")
+            candidate_str = base_claim_id_str if i == 0 else f"{base_claim_id_str}-retry-{i}"
+            
+            # Calculate the Integer ID
+            candidate_int_id = self._get_blockchain_claim_id(candidate_str)
+            
+            # Check status on chain
+            try:
+                claim_data = contract.functions.claims(candidate_int_id).call()
+                exists = claim_data[0] != 0
+                
+                if not exists:
+                    logger.info(f"✨ Found available Blockchain ID: {candidate_int_id} (derived from {candidate_str})")
+                    return candidate_int_id, False  # (id, exists)
+                
+                # If it exists, check if it's "active" (SUBMITTED=0)
+                # If it is SUBMITTED, we can reuse it (it's just an update)
+                # If it is APPROVED(2) or REJECTED(3), we MUST move to next index
+                status = claim_data[3]
+                if status == 0:  # SUBMITTED
+                    logger.info(f"♻️ Reusing existing active claim ID: {candidate_int_id}")
+                    return candidate_int_id, True
+                
+                logger.warning(f"⚠️ Claim ID {candidate_int_id} is occupied and terminal (Status {status}). Trying next index...")
+                
+            except Exception as e:
+                logger.error(f"Error checking availability: {e}")
+                return 0, False
+
+        raise Exception("Could not find available blockchain ID after retries")
+
     def _submit_claim(self, contract, claim_data, blockchain_claim_id, nonce):
         """Submit new claim to blockchain"""
         try:
-            # Map claim types
             claim_type_mapping = {"auto": 0, "home": 1, "health": 2}
             claim_type = claim_type_mapping.get(claim_data.get("claim_type", "").lower(), 0)
             
             logger.info(f"Submitting new claim to blockchain with ID {blockchain_claim_id}...")
             
-            # Build transaction
             tx_data = contract.functions.submitClaim(
                 blockchain_claim_id,
                 self.account.address,
@@ -133,25 +167,21 @@ class BlockchainAgent(BaseAgent):
                 "chainId": 80002
             })
             
-            # Sign and send transaction
             signed_tx = self.w3.eth.account.sign_transaction(tx_data, self.private_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             
             logger.info(f"Transaction sent: {tx_hash.hex()}, waiting for receipt...")
             
-            # Wait for receipt
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
             
             if receipt.status == 1:
                 logger.info(f"✅ Claim submitted successfully: {tx_hash.hex()}")
                 return True, tx_hash.hex()
             else:
-                # ✅ Status 0 means the contract reverted (likely duplicate)
                 logger.warning(f"⚠️ Claim submission reverted (Status 0). Likely already processed. Tx: {tx_hash.hex()}")
-                # Check if claim exists now - if yes, treat as success
                 if self._check_claim_exists(contract, blockchain_claim_id):
                     logger.info(f"✅ Claim exists on-chain despite revert. Another process likely succeeded.")
-                    return True, None  # Success but no new tx_hash
+                    return True, None
                 return False, None
                 
         except Exception as e:
@@ -161,33 +191,19 @@ class BlockchainAgent(BaseAgent):
     def _update_ai_assessment(self, contract, claim_data, blockchain_claim_id, nonce):
         """Update AI assessment for existing claim"""
         try:
-            # Prepare agent reports
             agent_reports_json = []
             if claim_data.get("agent_reports"):
                 for agent_name, report in claim_data["agent_reports"].items():
-                    if agent_name != "blockchain_agent":  # Don't include self
-                        
-                        # -------------------------------------------------
-                        # 💥 START OF THE FIX 💥
-                        # -------------------------------------------------
-                        # We must NOT send the full 'findings' to the blockchain.
-                        # It's too much data and will cause the transaction to fail.
-                        # We will send a summary instead.
-                        
+                    if agent_name != "blockchain_agent":
                         summary_findings = {}
                         if 'findings' in report:
-                            # For document_agent, just report validity, not the text
                             if agent_name == 'document_agent':
                                 summary_findings['validity'] = report['findings'].get('validity', 'unknown')
                                 if summary_findings['validity'] == 'error':
-                                    summary_findings['error'] = report['findings'].get('error', 'Unknown error')[:200] # Truncate error
-                            
-                            # For fraud_agent, report the reason
+                                    summary_findings['error'] = report['findings'].get('error', 'Unknown error')[:200]
                             elif agent_name == 'fraud_agent':
                                 summary_findings['risk_score'] = report['findings'].get('risk_score', 0)
                                 summary_findings['reason'] = report['findings'].get('reason', 'N/A')
-                            
-                            # For other agents, just report the main findings
                             elif agent_name == 'damage_agent':
                                 summary_findings['estimated_cost'] = report['findings'].get('estimated_cost', 0)
                             elif agent_name == 'settlement_agent':
@@ -196,21 +212,17 @@ class BlockchainAgent(BaseAgent):
                         agent_reports_json.append(json.dumps({
                             "agent": agent_name,
                             "confidence": report.get("confidence", 0),
-                            "findings_summary": summary_findings # Send summary, not full findings
+                            "findings_summary": summary_findings
                         }))
-                        # -------------------------------------------------
-                        # 💥 END OF THE FIX 💥
-                        # -------------------------------------------------
             
             logger.info(f"Updating AI assessment for claim {blockchain_claim_id}...")
             
-            # Build transaction
             tx_data = contract.functions.updateAIAssessment(
                 blockchain_claim_id,
-                int(claim_data.get("confidence_score", 0) * 100),  # Convert to percentage
+                int(claim_data.get("confidence_score", 0) * 100),
                 int(claim_data.get("risk_score", 0)),
                 self.w3.to_wei(str(claim_data.get("recommended_amount", 0)), 'ether'),
-                agent_reports_json, # This now contains the small summary
+                agent_reports_json,
                 claim_data.get("fraud_detected", False),
             ).build_transaction({
                 "from": self.account.address,
@@ -220,24 +232,20 @@ class BlockchainAgent(BaseAgent):
                 "chainId": 80002
             })
             
-            # Sign and send transaction
             signed_tx = self.w3.eth.account.sign_transaction(tx_data, self.private_key)
             tx_hash = self.w3.eth.send_raw_transaction(signed_tx.raw_transaction)
             
             logger.info(f"AI assessment transaction sent: {tx_hash.hex()}, waiting for receipt...")
             
-            # Wait for receipt
             receipt = self.w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
             
             if receipt.status == 1:
                 logger.info(f"✅ AI assessment updated successfully: {tx_hash.hex()}")
                 return True, tx_hash.hex()
             else:
-                # ✅ Status 0 = Contract reverted (likely duplicate attempt)
                 logger.warning(f"⚠️ AI assessment update reverted (Status 0). Likely duplicate from race condition. Tx: {tx_hash.hex()}")
                 logger.info(f"ℹ️ This is normal if multiple processes tried to update simultaneously. First one succeeded.")
-                # Don't fail the entire workflow - just log it
-                return True, None  # Treat as success to prevent cascading errors
+                return True, None
                 
         except Exception as e:
             logger.error(f"❌ Error updating AI assessment: {e}")
@@ -265,34 +273,27 @@ class BlockchainAgent(BaseAgent):
             return self._create_agent_report(0.1, findings, processing_time)
         
         try:
-            # Initialize contract
             contract = self.w3.eth.contract(
                 address=self.w3.to_checksum_address(self.contract_address), 
                 abi=self.contract_abi
             )
-            try:
-                current_nonce = self.w3.eth.get_transaction_count(self.account.address)
-                logger.info(f"Current base nonce: {current_nonce}")
-            except Exception as e:
-                logger.error(f"Failed to get transaction count: {e}")
-                raise e # Fail fast
             
-            # Convert claim ID
-            blockchain_claim_id = self._get_blockchain_claim_id(claim_data["claim_id"])
+            current_nonce = self.w3.eth.get_transaction_count(self.account.address)
+            logger.info(f"Current base nonce: {current_nonce}")
+            
+            # ✅ FIX: Get a valid, non-terminal Claim ID
+            blockchain_claim_id, claim_exists = self._get_available_claim_id(contract, claim_data["claim_id"])
+            
             findings["blockchain_claim_id"] = blockchain_claim_id
             findings["steps"].append(f"Generated blockchain ID: {blockchain_claim_id}")
-            logger.info(f"📋 Blockchain claim ID: {blockchain_claim_id}")
-            
-            # Step 1: Check if claim exists on blockchain
-            claim_exists = self._check_claim_exists(contract, blockchain_claim_id)
-            findings["steps"].append(f"Claim exists check: {claim_exists}")
+            logger.info(f"📋 Blockchain claim ID: {blockchain_claim_id} (Exists: {claim_exists})")
             
             submit_tx_hash = None
+            
             # Step 2: Submit claim if it doesn't exist
             if not claim_exists:
-                logger.info(f"📝 Claim doesn't exist, submitting to blockchain...")
+                logger.info(f"📝 Submitting new claim entry to blockchain...")
                 success, submit_tx_hash = self._submit_claim(contract, claim_data, blockchain_claim_id, current_nonce)
-                
                 
                 if not success:
                     findings["status"] = "partial_success"
@@ -302,38 +303,35 @@ class BlockchainAgent(BaseAgent):
                 else:
                     findings["steps"].append(f"✅ Claim submitted: {submit_tx_hash}")
                     logger.info(f"✅ Claim submitted: {submit_tx_hash}")
-                    current_nonce += 1  # Increment nonce for next transaction
+                    current_nonce += 1
                     
+                    # Wait for state propagation
                     logger.info(f"Polling for claim {blockchain_claim_id} status to be SUBMITTED (0)...")
                     max_retries = 10
                     retries = 0
                     status = -1
                     while retries < max_retries:
-                        # Call our new helper function
                         status = self._get_claim_status(contract, blockchain_claim_id)
                         
-                        # ClaimStatus.SUBMITTED is 0 in the enum
-                        if status == 0: 
+                        if status == 0:
                             logger.info(f"✅ Claim status is now SUBMITTED (0). Proceeding.")
                             break
                         
                         logger.warning(f"Waiting... Claim status is currently {status} (not 0). Retry {retries+1}/{max_retries}")
-                        time.sleep(3) # Wait 3 seconds between polls
+                        time.sleep(3)
                         retries += 1
                     
                     if status != 0:
-                        # If the loop finished without status 0, fail
                         logger.error(f"❌ Timed out waiting for claim status to be SUBMITTED.")
                         findings["status"] = "error"
                         findings["error"] = "Timed out waiting for on-chain state propagation"
-                        # Set submit_tx_hash to None to prevent the next step from running
                         submit_tx_hash = None
             else:
                 findings["steps"].append("✅ Claim already exists on blockchain")
                 logger.info("✅ Claim already exists on blockchain")
             
             # Step 3: Update AI assessment (only if claim was submitted or already exists)
-            if claim_exists or (not claim_exists and 'submit_tx_hash' in locals() and submit_tx_hash):
+            if claim_exists or (not claim_exists and submit_tx_hash):
                 logger.info(f"🤖 Updating AI assessment with nonce {current_nonce}...")
                 success, update_tx_hash = self._update_ai_assessment(contract, claim_data, blockchain_claim_id, current_nonce)
                 

@@ -72,6 +72,11 @@ export class UsersService {
 
     return data;
   }
+  async markNotificationRead(id: string) {
+    const supabase = this.supabaseService.getAdminClient();
+    await supabase.from('notifications').update({ is_read: true }).eq('id', id);
+    return { success: true };
+  }
   async getNotifications(userId: string) {
     const supabase = this.supabaseService.getAdminClient();
     const { data } = await supabase

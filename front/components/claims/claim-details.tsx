@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useRef } from 'react'; // ✅ Add useRef
+import { useState, useRef } from 'react';
+import { useRouter } from 'next/navigation'; // ✅ Add useRouter
 import { Claim, ClaimStatus } from '@/lib/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ClaimStatusBadge } from './claim-status-badge';
@@ -24,9 +25,10 @@ interface ClaimDetailsProps {
 export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
-  const hasSubmittedRef = useRef(false); // ✅ Track if already submitted
+  const hasSubmittedRef = useRef(false);
   
   const { user } = useAuth();
+  const router = useRouter(); // ✅ Initialize router
   
   const isAdmin = user?.role === 'admin';
   const isDraft = claim.status === ClaimStatus.DRAFT;
@@ -34,7 +36,6 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const isApproved = claim.status === ClaimStatus.APPROVED || claim.status === ClaimStatus.SETTLED;
 
   const handleSubmitForReview = async () => {
-    // ✅ Prevent duplicate calls
     if (hasSubmittedRef.current || isSubmitting) {
       console.log('⚠️ Submit already in progress, ignoring duplicate call');
       return;
@@ -54,15 +55,15 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
       toast.dismiss();
       toast.error(`Submission failed: ${error.message}`);
       setShowLogs(false);
-      hasSubmittedRef.current = false; // ✅ Allow retry on error
+      hasSubmittedRef.current = false;
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleAiComplete = () => {
-    setShowLogs(false); // Hide logs
-    onClaimUpdate(); // Refresh claim data to get final status
+    setShowLogs(false);
+    onClaimUpdate();
   };
 
   const hasDocuments = claim.document_urls && claim.document_urls.length > 0;
@@ -92,7 +93,6 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
                 <InfoItem label="Type" value={claim.type} />
                 <InfoItem label="Incident Date" value={new Date(claim.incident_date).toLocaleDateString()} />
                 <InfoItem label="Requested Amount" value={`$${claim.requested_amount.toLocaleString()}`} />
-                {/* ✅ FIX: Display Approved Amount if it exists */}
                 {claim.approved_amount && (
                     <div className="p-2 bg-green-50 border border-green-200 rounded">
                         <InfoItem label="Approved Amount" value={`$${claim.approved_amount.toLocaleString()}`} />
@@ -102,7 +102,6 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
             <InfoItem label="Location" value={claim.location} />
             <InfoItem label="Description" value={claim.description} />
             
-            {/* ✅ FIX: PDF Download Button (Only for Approved Claims) */}
             {isApproved && (
                 <Button variant="outline" className="w-full mt-4" onClick={() => generateClaimReport(claim)}>
                     <Download className="mr-2 h-4 w-4" /> Download Official Claim Report (PDF)
@@ -111,12 +110,10 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
           </CardContent>
         </Card>
 
-          {isAdmin && claim.ai_assessment && (
+        {isAdmin && claim.ai_assessment && (
           <AgentFindingsReport assessment={claim.ai_assessment} />
         )}
 
-
-        {/* ✅ NEW: Detailed AI Analysis Download Button (Admin Only) */}
         {isAdmin && claim.ai_assessment && (
             <div className="flex justify-start">
                 <Button 
@@ -130,14 +127,10 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
             </div>
         )}
 
-        {/* ✅ Admin-Only Detailed Report */}
-      
-        {/* --- DOCUMENTS & PHOTOS SECTION --- */}
         <Card>
           <CardHeader><CardTitle>Evidence & Documents</CardTitle></CardHeader>
           <CardContent className="space-y-6">
             
-            {/* 1. DOCUMENTS */}
             <div>
               <h3 className="font-medium mb-2 flex items-center">
                   <FileText className="w-4 h-4 mr-2"/> Documents
@@ -156,7 +149,6 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
                   </div>
               ) : <p className="text-sm text-slate-400 italic">No documents uploaded.</p>}
               
-              {/* Only show Uploader if Draft */}
               {isDraft && (
                 <div className="mt-4">
                     <FileUpload 
@@ -171,7 +163,6 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
 
             <hr />
 
-            {/* 2. PHOTOS */}
             <div>
               <h3 className="font-medium mb-2 flex items-center">
                   <ImageIcon className="w-4 h-4 mr-2"/> Damage Photos
@@ -186,7 +177,6 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
                   </div>
               ) : <p className="text-sm text-slate-400 italic">No photos uploaded.</p>}
 
-              {/* Only show Uploader if Draft */}
               {isDraft && (
                 <div className="mt-4">
                     <FileUpload 
@@ -202,18 +192,14 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
           </CardContent>
         </Card>
         
-        {/* --- AI Progress --- */}
-        {/* ✅ LOGIC UPDATE: Show if processing OR if we just clicked submit */}
         {(isProcessing || showLogs) && (
           <AIProcessingIndicator claimId={claim.id} />
         )}
 
-        {/* ✅ AI THINKING LOGS with completion callback */}
         {(isProcessing || showLogs) && (
           <AiThinkingLogs claimId={claim.id} onComplete={handleAiComplete} />
         )}
 
-        {/* --- AI Result --- */}
         {claim.ai_assessment && (
           <Card>
             <CardHeader><CardTitle>AI Assessment</CardTitle></CardHeader>
@@ -242,6 +228,27 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
         {/* Admin Actions */}
         {isAdmin && (claim.status === ClaimStatus.AI_REVIEW || claim.status === ClaimStatus.HUMAN_REVIEW) && (
             <ActionButtons claim={claim} onUpdate={onClaimUpdate} />
+        )}
+        
+        {/* ✅ NEW: Retry Logic for Rejected/Draft Claims */}
+        {!isAdmin && (claim.status === ClaimStatus.REJECTED || claim.status === ClaimStatus.DRAFT) && (
+            <Card>
+                <CardHeader><CardTitle>Edit Claim</CardTitle></CardHeader>
+                <CardContent>
+                    <Button 
+                        variant="outline" 
+                        className="w-full border-yellow-500 text-yellow-700 hover:bg-yellow-50"
+                        onClick={() => router.push(`/claims/${claim.id}/edit`)}
+                    >
+                        ✏️ Edit Claim Details
+                    </Button>
+                    {claim.status === ClaimStatus.REJECTED && (
+                        <p className="text-xs text-slate-500 mt-2 text-center">
+                            Editing will reset status to Draft so you can re-submit.
+                        </p>
+                    )}
+                </CardContent>
+            </Card>
         )}
         
         {/* Status Card for User */}

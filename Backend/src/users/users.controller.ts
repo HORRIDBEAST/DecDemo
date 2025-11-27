@@ -1,4 +1,4 @@
-import { Controller, Get, Body, Patch, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Body, Patch, UseGuards, Request, Param } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiTags } from '@nestjs/swagger';
@@ -21,6 +21,11 @@ export class UsersController {
     return this.usersService.getNotifications(req.user.id);
   }
 
+  @Patch('notifications/:id/read')
+  async markRead(@Param('id') id: string) {
+    return this.usersService.markNotificationRead(id);
+  }
+  
   @Patch('me')
   updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(req.user.id, updateUserDto);
