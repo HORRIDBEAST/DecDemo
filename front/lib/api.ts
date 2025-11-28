@@ -19,14 +19,21 @@ const getHeaders = () => {
 };
 
 // A helper function to handle API responses and errors
+// lib/api.ts
+
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-    throw new Error(errorData.message || 'API request failed');
+    const text = await response.text();
+    try {
+        const errorData = JSON.parse(text);
+        throw new Error(errorData.message || `API Error: ${response.status}`);
+    } catch (e) {
+        throw new Error(`API Request Failed (${response.status}): ${text}`);
+    }
   }
-  return response.json();
+  const text = await response.text();
+  return text ? JSON.parse(text) : {} as T;
 }
-
 
 export const api = {
   // === Auth ===
@@ -73,6 +80,24 @@ getAdminClaims: async (): Promise<Claim[]> => {
       method: 'PATCH',
       headers: getHeaders(),
       body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+  // Add to api object
+  createReview: async (data: { rating: number; comment: string; claimId?: string }) => {
+    const res = await fetch(`${API_URL}/users/reviews`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse(res);
+  },
+
+  // ... existing methods
+  getReviews: async (): Promise<any[]> => {
+    // This endpoint needs to be public in your backend
+    const res = await fetch(`${API_URL}/users/reviews/public`, {
+      headers: { 'Content-Type': 'application/json' } // No Auth header needed for public route
     });
     return handleResponse(res);
   },

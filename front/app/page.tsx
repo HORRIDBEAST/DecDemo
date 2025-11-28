@@ -8,7 +8,12 @@ export default function LandingPage() {
       {/* Hero Section */}
       <nav className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="text-2xl font-bold text-white">DecentralizedClaim</div>
-        <div className="space-x-4">
+        <div className="space-x-4 flex items-center">
+          {/* ✅ NEW: Reviews Link */}
+          <Link href="/reviews" className="text-slate-300 hover:text-white transition-colors">
+            Reviews
+          </Link>
+          
           <Link href="/login">
             <Button variant="ghost" className="text-white">Login</Button>
           </Link>

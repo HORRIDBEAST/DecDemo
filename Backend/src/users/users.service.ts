@@ -48,7 +48,65 @@ export class UsersService {
 
     return data;
   }
+async createReview(userId: string, rating: number, comment: string, claimId?: string) {
+    const supabase = this.supabaseService.getAdminClient();
+    
+    // ✅ Optional: Check if user already reviewed this claim
+    if (claimId) {
+      const { data: existingReview } = await supabase
+        .from('reviews')
+        .select('id')
+        .eq('user_id', userId)
+        .eq('claim_id', claimId)
+        .single();
+      
+      if (existingReview) {
+        throw new Error('You have already reviewed this claim');
+      }
+    }
 
+    const { data, error } = await supabase
+      .from('reviews')
+      .insert({ 
+        user_id: userId, 
+        rating, 
+        comment, 
+        claim_id: claimId, // ✅ Save the claim ID
+        is_public: true // Auto-approve for demo purposes
+      }) 
+      .select()
+      .single();
+      
+    if (error) throw new Error(error.message);
+    return data;
+  }
+
+ async getPublicReviews() {
+    const supabase = this.supabaseService.getAdminClient();
+    
+    // Attempt simpler join syntax first
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*, users!user_id(display_name)') // !user_id explicitly tells PostgREST which FK to use
+      .eq('is_public', true)
+      .order('created_at', { ascending: false })
+      .limit(10);
+
+    if (error) {
+        this.logger.error("Failed to fetch reviews:", error);
+        // Fallback: If join fails, just return reviews without user names to prevent crashing
+        const { data: rawData } = await supabase
+            .from('reviews')
+            .select('*')
+            .eq('is_public', true)
+            .limit(10);
+        return rawData || [];
+    }
+    
+    // Map the result if necessary (PostgREST returns it as a nested object)
+    // The frontend expects: review.users.display_name
+    return data || [];
+  }
    async update(id: string, updateUserDto: UpdateUserDto) {
     const supabase = this.supabaseService.getAdminClient();
     

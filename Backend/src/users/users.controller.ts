@@ -1,9 +1,9 @@
-import { Controller, Get, Body, Patch, UseGuards, Request, Param } from '@nestjs/common';
+import { Controller, Get, Body, Patch, UseGuards, Request, Param, Post } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { ApiTags } from '@nestjs/swagger';
 import { SupabaseAuthGuard } from '../auth/guards/supabase-auth.guard';
-
+import {Public} from '../auth/decorators/public.decorator';
 @ApiTags('users')
 @Controller('users')
 @UseGuards(SupabaseAuthGuard)
@@ -29,5 +29,16 @@ export class UsersController {
   @Patch('me')
   updateProfile(@Request() req, @Body() updateUserDto: UpdateUserDto) {
     return this.usersService.update(req.user.id, updateUserDto);
+  }
+
+  @Post('reviews')
+  async createReview(@Request() req, @Body() body: { rating: number; comment: string; claimId?: string }) {
+    return this.usersService.createReview(req.user.id, body.rating, body.comment, body.claimId);
+  }
+  @Get('reviews/public')
+  @Public() // You might need to create a Public decorator or just allow this route in AuthGuard
+  async getPublicReviews() {
+    const reviews = this.usersService.getPublicReviews();
+    return reviews;
   }
 }

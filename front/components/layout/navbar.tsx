@@ -16,6 +16,7 @@ import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
+import { FeedbackModal } from './feedback-modal';
 
 function NotificationBell() {
   const [notifications, setNotifications] = useState<any[]>([]);
@@ -105,6 +106,7 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
+          <FeedbackModal />
           <NotificationBell />
 
           <DropdownMenu>
