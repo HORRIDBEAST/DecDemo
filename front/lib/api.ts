@@ -191,4 +191,12 @@ markNotificationRead: async (id: string) => {
     });
     return handleResponse(res);
   },
+  
+  // ✅ Add this
+  getFinanceNews: async (query: string): Promise<any[]> => {
+    const res = await fetch(`${API_URL}/finance/news?query=${encodeURIComponent(query)}`, {
+      headers: { 'Content-Type': 'application/json' }
+    });
+    return handleResponse(res);
+  },
 };

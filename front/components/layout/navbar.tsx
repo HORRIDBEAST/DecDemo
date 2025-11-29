@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User, Settings, Bell, HelpCircle } from 'lucide-react';
+import { LogOut, User, Settings, Bell, HelpCircle, TrendingUp } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -106,7 +106,15 @@ export default function Navbar() {
         </div>
 
         <div className="flex items-center gap-4">
-          {/* ✅ NEW: Help Link */}
+          {/* ✅ NEW: Finance Link */}
+          <Link href="/finance">
+            <Button variant="ghost" size="sm" className="hidden md:flex">
+              <TrendingUp className="w-4 h-4 mr-2" /> 
+              Finance
+            </Button>
+          </Link>
+          
+          {/* ✅ Help Link */}
           <Link href="/help">
             <Button variant="ghost" size="sm" className="hidden md:flex">
               <HelpCircle className="w-4 h-4 mr-2" /> 
@@ -142,6 +150,13 @@ export default function Navbar() {
               <DropdownMenuItem>
                 <Settings className="mr-2 h-4 w-4" />
                 Settings
+              </DropdownMenuItem>
+              {/* ✅ Finance menu item for mobile */}
+              <DropdownMenuItem asChild className="md:hidden">
+                <Link href="/finance">
+                  <TrendingUp className="mr-2 h-4 w-4" />
+                  Finance News
+                </Link>
               </DropdownMenuItem>
               {/* ✅ Help menu item for mobile */}
               <DropdownMenuItem asChild className="md:hidden">

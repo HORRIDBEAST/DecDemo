@@ -725,12 +725,17 @@ export class ClaimsService {
     claims.forEach(claim => {
       stats.byStatus[claim.status]++;
       stats.byType[claim.type]++;
-      stats.totalRequested += parseFloat(claim.requested_amount) || 0;
+      stats.totalRequested += Number(claim.requested_amount) || 0; // ✅ Use Number() safely
+      
+      // ✅ Calculate Total Approved Value (Money the user will get)
       if (claim.approved_amount) {
-        stats.totalApproved += parseFloat(claim.approved_amount);
-      }
-      if (claim.status === ClaimStatus.SETTLED) {
-        stats.totalSettled += parseFloat(claim.approved_amount) || 0;
+        const amount = Number(claim.approved_amount) || 0;
+        stats.totalApproved += amount;
+        
+        // ✅ If you want "Settled" to mean "Money in pocket" (Status = SETTLED)
+        if (claim.status === ClaimStatus.SETTLED) {
+            stats.totalSettled += amount;
+        }
       }
     });
 

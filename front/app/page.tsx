@@ -9,6 +9,9 @@ export default function LandingPage() {
       <nav className="container mx-auto px-4 py-6 flex justify-between items-center">
         <div className="text-2xl font-bold text-white">DecentralizedClaim</div>
         <div className="space-x-4 flex items-center">
+          <Link href="/finance" className="text-slate-300 hover:text-white transition-colors">
+  Finance News
+</Link>
           {/* ✅ NEW: Help Link */}
           <Link href="/help" className="text-slate-300 hover:text-white transition-colors">
             Help
