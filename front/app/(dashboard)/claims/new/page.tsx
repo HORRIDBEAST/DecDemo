@@ -14,8 +14,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Loader2, FileText, DollarSign, Calendar, MapPin, Mic, Sparkles, ArrowRight } from 'lucide-react';
 import { VoiceClaimAssistant } from '@/components/claims/voice-assistant';
 
 // 1. Define the form schema
@@ -105,125 +105,225 @@ export default function NewClaimPage() {
   }
 
   return (
-    <Card className="max-w-3xl mx-auto">
-      <CardHeader>
-        <CardTitle>File a New Claim</CardTitle>
-      </CardHeader>
-      <CardContent>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
         
-        {/* ✅ ADD VOICE ASSISTANT HERE */}
-        <div className="mb-8 p-4 border border-blue-100 bg-blue-50 rounded-lg">
-          <VoiceClaimAssistant onFormFill={handleVoiceData} />
+        {/* --- HEADER --- */}
+        <div className="text-center space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-700">
+          <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent">
+            File a New Claim
+          </h1>
+          <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
+            Use our AI-powered voice assistant or fill out the form manually
+          </p>
         </div>
 
-        <div className="relative mb-8">
+        {/* ✅ VOICE ASSISTANT SECTION */}
+        <Card className="glass border-border/50 shadow-lg overflow-hidden relative animate-in fade-in slide-in-from-bottom-4 duration-700 delay-100">
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 via-purple-500/5 to-transparent pointer-events-none" />
+          <CardHeader className="relative">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500/10 to-purple-500/10">
+                <Mic className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <CardTitle className="flex items-center gap-2">
+                  AI Voice Assistant
+                  <Sparkles className="h-5 w-5 text-yellow-500" />
+                </CardTitle>
+                <CardDescription>Speak naturally, and AI will fill the form for you</CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="relative">
+            <VoiceClaimAssistant onFormFill={handleVoiceData} />
+          </CardContent>
+        </Card>
+
+        {/* Divider */}
+        <div className="relative animate-in fade-in duration-700 delay-200">
           <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
+            <span className="w-full border-t border-border/50" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-white px-2 text-muted-foreground">Or fill manually</span>
+            <span className="bg-background px-4 py-1 text-muted-foreground font-semibold tracking-wider">
+              Or fill manually
+            </span>
           </div>
         </div>
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            
-            <FormField
-              control={form.control}
-              name="type"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Claim Type</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a claim type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value={ClaimType.AUTO}>Auto</SelectItem>
-                      <SelectItem value={ClaimType.HOME}>Home</SelectItem>
-                      <SelectItem value={ClaimType.HEALTH}>Health</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+        {/* FORM CARD */}
+        <Card className="glass border-border/50 shadow-lg animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-primary" />
+              Claim Details
+            </CardTitle>
+            <CardDescription>Provide detailed information about your claim</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                
+                {/* Grid Layout for Fields */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+                          Claim Type
+                        </FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="h-11 border-border/50 hover:border-primary/50 transition-colors">
+                              <SelectValue placeholder="Select a claim type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value={ClaimType.AUTO}>🚗 Auto</SelectItem>
+                            <SelectItem value={ClaimType.HOME}>🏠 Home</SelectItem>
+                            <SelectItem value={ClaimType.HEALTH}>🏥 Health</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <FormField
-              control={form.control}
-              name="requestedAmount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Requested Amount ($)</FormLabel>
-                  <FormControl>
-                    <Input type="number" placeholder="1500" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="requestedAmount"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Requested Amount
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number" 
+                            placeholder="1500" 
+                            className="h-11 border-border/50 hover:border-primary/50 transition-colors"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <FormField
-              control={form.control}
-              name="incidentDate"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Incident Date</FormLabel>
-                  <FormControl>
-                    <Input type="date" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="incidentDate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Incident Date
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="date" 
+                            className="h-11 border-border/50 hover:border-primary/50 transition-colors"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-            <FormField
-              control={form.control}
-              name="location"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Incident Location</FormLabel>
-                  <FormControl>
-                    <Input placeholder="123 Main St, Springfield" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
+                  <FormField
+                    control={form.control}
+                    name="location"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Incident Location
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="123 Main St, Springfield" 
+                            className="h-11 border-border/50 hover:border-primary/50 transition-colors"
+                            {...field} 
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
 
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Detailed Description</FormLabel>
-                  <FormControl>
-                    <Textarea
-                      placeholder="Describe what happened in detail..."
-                      rows={5}
-                      {...field}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Draft...
-                </>
-              ) : (
-                'Create Draft & Continue to Uploads'
-              )}
-            </Button>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                {/* Full Width Description */}
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Detailed Description
+                      </FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder="Describe what happened in detail..."
+                          rows={6}
+                          className="resize-none border-border/50 hover:border-primary/50 transition-colors"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                {/* Submit Button */}
+                <div className="pt-4">
+                  <Button 
+                    type="submit" 
+                    disabled={isSubmitting}
+                    size="lg"
+                    className="w-full h-12 text-base shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        Creating Draft...
+                      </>
+                    ) : (
+                      <>
+                        Create Draft & Continue to Uploads
+                        <ArrowRight className="ml-2 h-5 w-5" />
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </CardContent>
+        </Card>
+
+        {/* Help Text */}
+        <Card className="glass border-border/50 bg-gradient-to-br from-blue-50/50 to-purple-50/50 dark:from-blue-950/20 dark:to-purple-950/20 animate-in fade-in duration-700 delay-400">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="p-2 rounded-lg bg-blue-100 text-blue-600 dark:bg-blue-900 dark:text-blue-300">
+                <Sparkles className="h-5 w-5" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-sm mb-1">Pro Tip</h4>
+                <p className="text-sm text-muted-foreground leading-relaxed">
+                  After creating your draft, you'll be able to upload supporting documents, photos, and evidence. 
+                  Our AI will analyze everything to expedite your claim processing.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
   );
 }

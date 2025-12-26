@@ -58,7 +58,7 @@ export default function LandingPage() {
       
       {/* --- NAVBAR --- */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2">
               <div className="bg-primary/10 p-2 rounded-lg">

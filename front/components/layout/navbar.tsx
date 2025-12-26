@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User, Settings, Bell, HelpCircle, TrendingUp } from 'lucide-react';
+import { LogOut, User, Settings, Bell, HelpCircle, TrendingUp, Shield, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -97,83 +97,131 @@ function NotificationBell() {
 
 export default function Navbar() {
   const { user, signOut } = useAuth();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   return (
-    <nav className="bg-white border-b border-slate-200 px-6 py-4">
-      <div className="flex items-center justify-between">
-        <div className="text-2xl font-bold text-slate-900">
-          DecentralizedClaim
-        </div>
-
-        <div className="flex items-center gap-4">
-          {/* ✅ NEW: Finance Link */}
-          <Link href="/finance">
-            <Button variant="ghost" size="sm" className="hidden md:flex">
-              <TrendingUp className="w-4 h-4 mr-2" /> 
-              Finance
-            </Button>
+    <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
+      <div className="w-full px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo - Clickable to Homepage */}
+          <Link href="/" className="flex items-center gap-2 group">
+            <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
+              <Shield className="w-6 h-6 text-primary" />
+            </div>
+            <span className="text-xl font-bold tracking-tight hover:text-primary transition-colors">
+              DecentralizedClaim
+            </span>
           </Link>
-          
-          {/* ✅ Help Link */}
-          <Link href="/help">
-            <Button variant="ghost" size="sm" className="hidden md:flex">
-              <HelpCircle className="w-4 h-4 mr-2" /> 
-              Help
-            </Button>
-          </Link>
-          
-          <FeedbackModal />
-          <NotificationBell />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" className="relative h-10 w-10 rounded-full">
-                <Avatar>
-                  <AvatarFallback>
-                    {user?.email?.charAt(0).toUpperCase() || 'U'}
-                  </AvatarFallback>
-                </Avatar>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                <div className="flex flex-col space-y-1">
-                  <p className="text-sm font-medium">My Account</p>
-                  <p className="text-xs text-slate-500">{user?.email}</p>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
-              {/* ✅ Finance menu item for mobile */}
-              <DropdownMenuItem asChild className="md:hidden">
-                <Link href="/finance">
-                  <TrendingUp className="mr-2 h-4 w-4" />
-                  Finance News
-                </Link>
-              </DropdownMenuItem>
-              {/* ✅ Help menu item for mobile */}
-              <DropdownMenuItem asChild className="md:hidden">
-                <Link href="/help">
-                  <HelpCircle className="mr-2 h-4 w-4" />
-                  Help Center
-                </Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => signOut()}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Log out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* Desktop Nav */}
+          <div className="hidden md:flex items-center gap-6">
+            <Link href="/finance" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              Finance News
+            </Link>
+            <Link href="/reviews" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              Reviews
+            </Link>
+            <Link href="/help" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              Help Center
+            </Link>
+            
+            <div className="h-4 w-px bg-border" />
+            
+            <FeedbackModal />
+            <NotificationBell />
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full hover:ring-2 hover:ring-primary/20 transition-all">
+                  <Avatar>
+                    <AvatarFallback className="bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary font-semibold">
+                      {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col space-y-1">
+                    <p className="text-sm font-medium">My Account</p>
+                    <p className="text-xs text-muted-foreground">{user?.email}</p>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="mr-2 h-4 w-4" />
+                  Settings
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => signOut()} className="text-red-600 focus:text-red-600">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Log out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Mobile Menu Toggle */}
+          <button 
+            className="md:hidden p-2 hover:bg-muted rounded-lg transition-colors" 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          >
+            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
         </div>
       </div>
+
+      {/* Mobile Nav */}
+      {isMobileMenuOpen && (
+        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-6 space-y-4 animate-in slide-in-from-top-5">
+          <Link 
+            href="/finance" 
+            className="block text-sm font-medium text-foreground/80 hover:text-primary py-2 transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <TrendingUp className="w-4 h-4 inline mr-2" />
+            Finance News
+          </Link>
+          <Link 
+            href="/reviews" 
+            className="block text-sm font-medium text-foreground/80 hover:text-primary py-2 transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            Reviews
+          </Link>
+          <Link 
+            href="/help" 
+            className="block text-sm font-medium text-foreground/80 hover:text-primary py-2 transition-colors"
+            onClick={() => setIsMobileMenuOpen(false)}
+          >
+            <HelpCircle className="w-4 h-4 inline mr-2" />
+            Help Center
+          </Link>
+          
+          <div className="pt-4 border-t border-border space-y-3">
+            <div className="flex items-center gap-3 text-sm">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-gradient-to-br from-primary/10 to-purple-500/10 text-primary text-xs">
+                  {user?.email?.charAt(0).toUpperCase() || 'U'}
+                </AvatarFallback>
+              </Avatar>
+              <span className="text-muted-foreground">{user?.email}</span>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full justify-start" 
+              onClick={() => signOut()}
+            >
+              <LogOut className="mr-2 h-4 w-4" />
+              Log out
+            </Button>
+          </div>
+        </div>
+      )}
     </nav>
   );
 }
