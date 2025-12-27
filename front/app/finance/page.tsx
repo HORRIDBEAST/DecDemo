@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
-import { Search, Loader2, TrendingUp, Wallet, Briefcase, Globe, ExternalLink } from 'lucide-react';
+import { Search, Loader2, TrendingUp, Wallet, Briefcase, Globe, ExternalLink, Shield } from 'lucide-react';
 
 // ✅ Define Categories with Sub-topics
 const CATEGORIES = [
@@ -111,8 +111,18 @@ export default function FinancePage() {
     <div className="min-h-screen bg-slate-50">
       {/* Navbar */}
       <div className="bg-white border-b py-4 px-6 flex justify-between items-center sticky top-0 z-10">
-        <Link href="/" className="font-bold text-xl">DecentralizedClaim</Link>
+        <Link href="/" className="flex items-center gap-2 group">
+          <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
+            <Shield className="w-6 h-6 text-primary" />
+          </div>
+          <span className="text-xl font-bold tracking-tight hover:text-primary transition-colors">
+            DecentralizedClaim
+          </span>
+        </Link>
         <div className="flex gap-4">
+          <Link href="/reviews" className="text-sm font-medium text-slate-600 hover:text-blue-600 pt-2">
+            Reviews
+          </Link>
           <Link href="/help" className="text-sm font-medium text-slate-600 hover:text-blue-600 pt-2">
             Help Center
           </Link>

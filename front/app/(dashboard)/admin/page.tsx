@@ -179,7 +179,7 @@ export default function AdminPage() {
                 <SelectContent>
                   <SelectItem value="all">All Claims</SelectItem>
                   <SelectItem value="pending">⚠️ Pending Review</SelectItem>
-                  <SelectItem value={ClaimStatus.APPROVED}>✅ Approved</SelectItem>
+                  <SelectItem value={ClaimStatus.SETTLED}>💰 Settled</SelectItem>
                   <SelectItem value={ClaimStatus.REJECTED}>❌ Rejected</SelectItem>
                   <SelectItem value={ClaimStatus.AI_REVIEW}>🤖 AI Review</SelectItem>
                   <SelectItem value={ClaimStatus.HUMAN_REVIEW}>👤 Human Review</SelectItem>

@@ -19,22 +19,26 @@ import Link from 'next/link';
 import { FeedbackModal } from './feedback-modal';
 
 function NotificationBell() {
+  const { user } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
   
   useEffect(() => {
+    // Don't fetch if user is not logged in
+    if (!user) return;
+
     const fetchNotes = async () => {
       try {
         const data = await api.getNotifications();
         setNotifications(Array.isArray(data) ? data : []);
       } catch (e) {
-        console.error('Failed to fetch notifications:', e);
+        // Silently fail to avoid console spam on connection reset
         setNotifications([]);
       }
     };
     fetchNotes();
     const interval = setInterval(fetchNotes, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
@@ -118,9 +122,7 @@ export default function Navbar() {
             <Link href="/finance" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
               Finance News
             </Link>
-            <Link href="/reviews" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
-              Reviews
-            </Link>
+            
             <Link href="/help" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
               Help Center
             </Link>

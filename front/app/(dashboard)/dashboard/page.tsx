@@ -24,17 +24,27 @@ export default function DashboardPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [statsData, claimsData, notesData, newsData] = await Promise.all([
+        // 1. Fetch critical app data first (fast DB calls)
+        const [statsData, claimsData, notesData] = await Promise.all([
           api.getClaimStats(),
           api.getClaims(1, 5),
           api.getNotifications(),
-          api.getFinanceNews('insurance market trends')
         ]);
 
         setStats(statsData);
         setRecentClaims(claimsData.claims || []);
         setNotifications(notesData.slice(0, 5) || []);
-        setMarketNews(newsData.slice(0, 4) || []);
+
+        // 2. Fetch external news SEPARATELY (slower, non-critical)
+        // Wrapped in its own try/catch so if news fails, dashboard still loads
+        try {
+          const newsData = await api.getFinanceNews('insurance market trends');
+          setMarketNews(newsData.slice(0, 4) || []);
+        } catch (newsError) {
+          console.warn('Finance news failed to load, but dashboard data is available');
+          setMarketNews([]);
+        }
+
       } catch (error) {
         console.error('Failed to fetch dashboard data:', error);
       } finally {
@@ -86,18 +96,18 @@ export default function DashboardPage() {
             subtext="AI Processing"
           />
           <StatsCard
-            title="Approved"
-            value={stats?.byStatus.approved || 0}
-            icon={CheckCircle}
-            color="green"
-            trend="+5%"
+            title="Total Requested"
+            value={`$${(stats?.totalRequested || 0).toLocaleString()}`}
+            icon={Banknote}
+            color="purple"
+            subtext="Claims Amount"
           />
           <StatsCard
-            title="Total Approved"
-            value={`$${(stats?.totalApproved || 0).toLocaleString()}`}
+            title="Total Settled"
+            value={`$${(stats?.totalSettled || 0).toLocaleString()}`}
             icon={DollarSign}
             color="green"
-            subtext="Payout Amount"
+            subtext="Paid to Users"
           />
         </div>
 

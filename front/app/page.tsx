@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { 
@@ -11,6 +12,7 @@ import {
 } from "lucide-react"
 
 export default function LandingPage() {
+  const { user, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const features = [
@@ -81,12 +83,26 @@ export default function LandingPage() {
                 Help Center
               </Link>
               <div className="h-4 w-px bg-border" />
-              <Link href="/login" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">
-                Log In
-              </Link>
-              <Button asChild className="rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
-                <Link href="/signup">Get Started</Link>
-              </Button>
+              
+              {/* Conditional rendering based on auth state */}
+              {!loading && (
+                user ? (
+                  <Button asChild className="rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
+                    <Link href="/dashboard">
+                      Go to Dashboard <ArrowRight className="ml-2 w-4 h-4" />
+                    </Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Link href="/login" className="text-sm font-medium text-foreground/60 hover:text-foreground transition-colors">
+                      Log In
+                    </Link>
+                    <Button asChild className="rounded-full px-6 shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5">
+                      <Link href="/signup">Get Started</Link>
+                    </Button>
+                  </>
+                )
+              )}
             </div>
 
             {/* Mobile Menu Toggle */}
@@ -103,12 +119,25 @@ export default function LandingPage() {
             <Link href="/reviews" className="block text-sm font-medium text-foreground/80 py-2">Reviews</Link>
             <Link href="/help" className="block text-sm font-medium text-foreground/80 py-2">Help Center</Link>
             <div className="pt-4 flex flex-col gap-3">
-              <Button asChild variant="outline" className="w-full justify-center rounded-full">
-                <Link href="/login">Log In</Link>
-              </Button>
-              <Button asChild className="w-full justify-center rounded-full">
-                <Link href="/signup">Get Started</Link>
-              </Button>
+              
+              {/* Conditional rendering for mobile based on auth state */}
+              {!loading && (
+                user ? (
+                  <Button asChild className="w-full justify-center rounded-full">
+                    <Link href="/dashboard">Go to Dashboard</Link>
+                  </Button>
+                ) : (
+                  <>
+                    <Button asChild variant="outline" className="w-full justify-center rounded-full">
+                      <Link href="/login">Log In</Link>
+                    </Button>
+                    <Button asChild className="w-full justify-center rounded-full">
+                      <Link href="/signup">Get Started</Link>
+                    </Button>
+                  </>
+                )
+              )}
+              
             </div>
           </div>
         )}

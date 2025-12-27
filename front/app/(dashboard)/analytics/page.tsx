@@ -18,6 +18,7 @@ export default function AnalyticsPage() {
 
   const statusData = [
     { name: 'Approved', value: stats?.byStatus.approved || 0 },
+    { name: 'Settled', value: stats?.byStatus.settled || 0 },
     { name: 'Rejected', value: stats?.byStatus.rejected || 0 },
     { name: 'Processing', value: (stats?.byStatus.processing || 0) + (stats?.byStatus.ai_review || 0) },
   ];
@@ -27,20 +28,28 @@ export default function AnalyticsPage() {
       <h1 className="text-3xl font-bold text-center">Analytics & Insights</h1>
       
       {/* Top Stats Row */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
         <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500">Total Value Requested</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500">Total Requested</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold">${stats?.totalRequested.toLocaleString()}</div></CardContent>
         </Card>
         <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500">Total Value Settled</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500">Rejected Claims</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-red-600">{stats?.byStatus.rejected || 0}</div></CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500">Claims Settled</CardTitle></CardHeader>
+            <CardContent><div className="text-2xl font-bold text-emerald-600">{stats?.byStatus.settled || 0}</div></CardContent>
+        </Card>
+        <Card>
+            <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500">Settled (Paid Out)</CardTitle></CardHeader>
             <CardContent><div className="text-2xl font-bold text-green-600">${stats?.totalSettled.toLocaleString()}</div></CardContent>
         </Card>
         <Card>
             <CardHeader className="pb-2"><CardTitle className="text-sm text-slate-500">Approval Rate</CardTitle></CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold text-blue-600">
-                    {stats?.total ? ((stats.byStatus.approved / stats.total) * 100).toFixed(1) : 0}%
+                <div className="text-2xl font-bold text-purple-600">
+                    {stats?.total ? (((stats.byStatus.approved + stats.byStatus.settled) / stats.total) * 100).toFixed(1) : 0}%
                 </div>
             </CardContent>
         </Card>

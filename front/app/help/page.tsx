@@ -7,15 +7,47 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
-import { Mail, MessageCircle, PlayCircle, FileText, Shield, HelpCircle, BookOpen, Video, Send, Sparkles } from 'lucide-react';
+import { Mail, MessageCircle, PlayCircle, FileText, Shield, HelpCircle, BookOpen, Video, Send, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { useState } from 'react';
 
 export default function HelpPage() {
   const { user } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    subject: '',
+    message: ''
+  });
 
-  const handleContactSubmit = (e: React.FormEvent) => {
+  const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    toast.success("Support ticket created! We will contact you shortly.");
+    setLoading(true);
+
+    try {
+      const response = await fetch('/api/support', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: user?.email || 'anonymous@user.com',
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        toast.success(data.message || 'Support ticket created! We will contact you shortly.');
+        setFormData({ subject: '', message: '' }); // Clear form
+      } else {
+        toast.error(data.error || 'Failed to send message. Please try again.');
+      }
+    } catch (error) {
+      console.error('Support form error:', error);
+      toast.error('Something went wrong. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -23,7 +55,7 @@ export default function HelpPage() {
       {/* Modern Navbar */}
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
         <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="max-w-7xl mx-auto flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-16">
             <Link href="/" className="flex items-center gap-2 group">
               <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
                 <Shield className="w-6 h-6 text-primary" />
@@ -32,7 +64,14 @@ export default function HelpPage() {
                 DecentralizedClaim
               </span>
             </Link>
-            <div className="flex gap-4">
+            
+            <div className="flex items-center gap-6">
+              <Link href="/finance" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                Finance News
+              </Link>
+              <Link href="/reviews" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                Reviews
+              </Link>
               {user ? (
                 <Button asChild className="rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40">
                   <Link href="/dashboard">Go to Dashboard</Link>
@@ -180,7 +219,10 @@ export default function HelpPage() {
                   </label>
                   <Input 
                     placeholder="e.g. Claim #123 issue" 
+                    value={formData.subject}
+                    onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
                     required 
+                    disabled={loading}
                     className="h-11 border-border/50 hover:border-primary/50 transition-colors"
                   />
                 </div>
@@ -191,16 +233,29 @@ export default function HelpPage() {
                   <Textarea 
                     placeholder="Describe your issue..." 
                     rows={5} 
+                    value={formData.message}
+                    onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     required 
+                    disabled={loading}
                     className="resize-none border-border/50 hover:border-primary/50 transition-colors"
                   />
                 </div>
                 <Button 
                   type="submit" 
+                  disabled={loading}
                   className="w-full h-11 shadow-lg shadow-primary/25 hover:shadow-primary/40 hover:scale-[1.02] transition-all"
                 >
-                  <Send className="mr-2 h-4 w-4" />
-                  Send Message
+                  {loading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Sending...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="mr-2 h-4 w-4" />
+                      Send Message
+                    </>
+                  )}
                 </Button>
               </form>
 

@@ -35,6 +35,12 @@ export class UsersController {
   async createReview(@Request() req, @Body() body: { rating: number; comment: string; claimId?: string }) {
     return this.usersService.createReview(req.user.id, body.rating, body.comment, body.claimId);
   }
+
+  @Get('my-reviews')
+  async getMyReviews(@Request() req) {
+    return this.usersService.getUserReviews(req.user.id);
+  }
+
   @Get('reviews/public')
   @Public() // You might need to create a Public decorator or just allow this route in AuthGuard
   async getPublicReviews() {

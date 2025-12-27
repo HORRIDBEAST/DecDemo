@@ -101,6 +101,13 @@ getAdminClaims: async (): Promise<Claim[]> => {
     });
     return handleResponse(res);
   },
+
+  getMyReviews: async (): Promise<any[]> => {
+    const res = await fetch(`${API_URL}/users/my-reviews`, {
+      headers: getHeaders()
+    });
+    return handleResponse(res);
+  },
 markNotificationRead: async (id: string) => {
     const res = await fetch(`${API_URL}/users/notifications/${id}/read`, {
       method: 'PATCH',

@@ -81,13 +81,30 @@ async createReview(userId: string, rating: number, comment: string, claimId?: st
     return data;
   }
 
+  async getUserReviews(userId: string) {
+    const supabase = this.supabaseService.getAdminClient();
+    
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*, claims(type)')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      this.logger.error("Failed to fetch user reviews:", error);
+      return [];
+    }
+    
+    return data || [];
+  }
+
  async getPublicReviews() {
     const supabase = this.supabaseService.getAdminClient();
     
     // Attempt simpler join syntax first
     const { data, error } = await supabase
       .from('reviews')
-      .select('*, users!user_id(display_name)') // !user_id explicitly tells PostgREST which FK to use
+      .select('*, users!user_id(display_name), claims(type)') // Include claim type
       .eq('is_public', true)
       .order('created_at', { ascending: false })
       .limit(10);

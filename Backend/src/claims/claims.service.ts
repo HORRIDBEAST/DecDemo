@@ -718,24 +718,25 @@ export class ClaimsService {
         [ClaimType.HEALTH]: 0,
       },
       totalRequested: 0,
-      totalApproved: 0,
-      totalSettled: 0,
+      totalApproved: 0, // Money approved but not yet paid (liability)
+      totalSettled: 0,  // Money actually paid out (expense)
     };
 
     claims.forEach(claim => {
       stats.byStatus[claim.status]++;
       stats.byType[claim.type]++;
-      stats.totalRequested += Number(claim.requested_amount) || 0; // ✅ Use Number() safely
+      stats.totalRequested += Number(claim.requested_amount) || 0;
       
-      // ✅ Calculate Total Approved Value (Money the user will get)
-      if (claim.approved_amount) {
-        const amount = Number(claim.approved_amount) || 0;
+      const amount = Number(claim.approved_amount) || 0;
+      
+      // ✅ FIXED: Only count approved_amount for status='approved' (pending payout)
+      if (claim.status === ClaimStatus.APPROVED && amount > 0) {
         stats.totalApproved += amount;
-        
-        // ✅ If you want "Settled" to mean "Money in pocket" (Status = SETTLED)
-        if (claim.status === ClaimStatus.SETTLED) {
-            stats.totalSettled += amount;
-        }
+      }
+      
+      // ✅ Only count approved_amount for status='settled' (already paid)
+      if (claim.status === ClaimStatus.SETTLED && amount > 0) {
+        stats.totalSettled += amount;
       }
     });
 

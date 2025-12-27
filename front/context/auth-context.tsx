@@ -10,7 +10,7 @@ interface AuthContextType {
   user: User | null;
   loading: boolean;
   signIn: (email: string, pass: string) => Promise<void>;
-  signUp: (email: string, pass: string) => Promise<void>;
+  signUp: (email: string, pass: string, firstName?: string, lastName?: string, age?: number) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -40,12 +40,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
               }
 
               // --- CRITICAL FIX START ---
-              // Only redirect to dashboard if we are on a public route
-              const publicRoutes = ['/login', '/signup', '/'];
+              // Only redirect to dashboard if we are on strictly auth pages
+              // Removed '/' so logged-in users can visit homepage and see "Go to Dashboard" button
+              const publicRoutes = ['/login', '/signup'];
               if (event === 'SIGNED_IN' && publicRoutes.includes(pathname)) {
                 router.push('/dashboard');
               }
-              // If we are on /claims/new, DO NOTHING. Let the user stay there.
+              // If we are on /claims/new or homepage, DO NOTHING. Let the user stay there.
               // --- CRITICAL FIX END ---
 
             } catch (e) {
@@ -76,8 +77,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
-  const signUp = async (email: string, pass: string) => {
-    const { error } = await supabase.auth.signUp({ email, password: pass });
+  const signUp = async (email: string, pass: string, firstName?: string, lastName?: string, age?: number) => {
+    const { error } = await supabase.auth.signUp({ 
+      email, 
+      password: pass,
+      options: {
+        data: {
+          first_name: firstName || '',
+          last_name: lastName || '',
+          age: age,
+          display_name: firstName && lastName ? `${firstName} ${lastName}` : firstName || ''
+        }
+      }
+    });
     if (error) throw error;
   };
 
