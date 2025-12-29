@@ -132,12 +132,17 @@ class ClaimProcessingWorkflow:
             processing_time = (datetime.utcnow() - start_time).total_seconds()
             
             requires_human_review = final_state.get('risk_score', 0) > 70 or final_state.get('confidence_score', 1) < 0.7
+            
+            # If fraud detected, set recommended amount to $0 to avoid confusion
+            recommended_amount = final_state.get("recommended_amount", 0)
+            if final_state.get("fraud_detected", False):
+                recommended_amount = 0
 
             return AIAssessmentResult(
                 claim_id=final_state["claim_id"],
                 confidence_score=final_state.get("confidence_score", 0) * 100,
                 risk_score=final_state.get("risk_score", 0),
-                recommended_amount=final_state.get("recommended_amount", 0),
+                recommended_amount=recommended_amount,
                 fraud_detected=final_state.get("fraud_detected", False),
                 requires_human_review=requires_human_review,
                 agent_reports=final_state.get("agent_reports", {}),
