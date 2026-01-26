@@ -6,7 +6,7 @@ langchain
 langgraph
 langsmith
 langchain-openai
-opencv-python
+opencv-python-headless
 pillow
 pytesseract
 requests
@@ -14,3 +14,7 @@ web3
 httpx
 pdf2image
 tavily-python
+imagehash
+dateparser
+supabase
+openai

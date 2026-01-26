@@ -372,11 +372,13 @@ export default function LandingPage() {
             Join the insurance revolution. Experience the speed of AI and the trust of Blockchain today.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button asChild size="lg" className="h-14 px-10 text-lg rounded-full shadow-2xl hover:scale-105 transition-transform">
-              <Link href="/signup">Start Free Trial</Link>
-            </Button>
-            <Button asChild variant="secondary" size="lg" className="h-14 px-10 text-lg rounded-full hover:bg-background border">
-              <Link href="/login">Access Dashboard</Link>
+            {!loading && !user && (
+              <Button asChild size="lg" className="h-14 px-10 text-lg rounded-full shadow-2xl hover:scale-105 transition-transform">
+                <Link href="/signup">Start Free Trial</Link>
+              </Button>
+            )}
+            <Button asChild variant="secondary" size="lg" className="h-14 px-10 text-lg text-white rounded-full hover:bg-gray-500 bg-gray-800 border">
+              <Link href={user ? "/dashboard" : "/login"}>Access Dashboard</Link>
             </Button>
           </div>
         </div>

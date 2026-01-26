@@ -22,6 +22,7 @@ logger = logging.getLogger(__name__)
 # All nodes in the graph will read from and write to this state.
 class AgentState(TypedDict):
     claim_id: str
+    user_id: str  # Added for Supabase historical checks
     claim_type: str
     requested_amount: float
     description: str
@@ -137,6 +138,21 @@ class ClaimProcessingWorkflow:
             recommended_amount = final_state.get("recommended_amount", 0)
             if final_state.get("fraud_detected", False):
                 recommended_amount = 0
+            
+            # ✅ Extract fraud reason from fraud agent report
+            fraud_report = final_state.get("agent_reports", {}).get("fraud_agent", {})
+            fraud_findings = fraud_report.get("findings", {})
+            fraud_reason = None
+            
+            if final_state.get("fraud_detected", False):
+                # Get main reason with evidence
+                fraud_reason = fraud_findings.get("reason", "Flagged by AI for inconsistencies")
+                
+                # Append key red flags for transparency
+                red_flags = fraud_findings.get("red_flags", [])
+                if red_flags:
+                    top_flags = red_flags[:2]  # Show top 2 flags
+                    fraud_reason += ". Key issues: " + "; ".join(top_flags)
 
             return AIAssessmentResult(
                 claim_id=final_state["claim_id"],
@@ -144,6 +160,7 @@ class ClaimProcessingWorkflow:
                 risk_score=final_state.get("risk_score", 0),
                 recommended_amount=recommended_amount,
                 fraud_detected=final_state.get("fraud_detected", False),
+                fraud_reason=fraud_reason,
                 requires_human_review=requires_human_review,
                 agent_reports=final_state.get("agent_reports", {}),
                 processing_time=processing_time,
@@ -158,6 +175,7 @@ class ClaimProcessingWorkflow:
                 risk_score=100,
                 recommended_amount=0,
                 fraud_detected=False,
+                fraud_reason=f"Processing error: {str(e)}",
                 requires_human_review=True,
                 agent_reports={},
                 processing_time=processing_time,

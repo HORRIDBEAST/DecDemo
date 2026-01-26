@@ -205,9 +205,29 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
             <CardHeader><CardTitle>AI Assessment</CardTitle></CardHeader>
             <CardContent className="space-y-4">
               {claim.ai_assessment.fraudDetected && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
-                  <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
-                  <span className="font-medium text-red-700">Flagged for Fraud: {claim.ai_assessment.fraudReason}</span>
+                <div className="p-4 bg-red-50 dark:bg-red-950/20 border border-red-200 dark:border-red-800 rounded-lg space-y-3">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400 mt-0.5 flex-shrink-0" />
+                    <div className="space-y-2 flex-1">
+                      <h4 className="text-sm font-bold text-red-800 dark:text-red-300">Flagged for Review</h4>
+                      <p className="text-sm text-red-700 dark:text-red-400">
+                        {claim.ai_assessment.fraudReason || "AI detected inconsistencies in the claim details."}
+                      </p>
+                      
+                      {/* Show detailed red flags if available */}
+                      {claim.ai_assessment.agentReports?.fraudAgent?.findings?.red_flags && 
+                       claim.ai_assessment.agentReports.fraudAgent.findings.red_flags.length > 0 && (
+                        <div className="mt-3 pt-3 border-t border-red-200 dark:border-red-800">
+                          <p className="text-xs font-semibold text-red-800 dark:text-red-300 mb-2">Specific Issues Detected:</p>
+                          <ul className="text-xs text-red-600 dark:text-red-400 space-y-1 list-disc pl-4">
+                            {claim.ai_assessment.agentReports.fraudAgent.findings.red_flags.slice(0, 3).map((flag: string, i: number) => (
+                              <li key={i}>{flag}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               )}
               <div className="grid grid-cols-2 gap-4">
