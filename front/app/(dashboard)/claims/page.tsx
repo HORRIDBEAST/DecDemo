@@ -169,7 +169,7 @@ export default function ClaimsListPage() {
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700">
           <div className="flex-1 text-center md:text-left md:flex md:justify-center">
             <div>
-              <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent text-center">
+              <h1 className="text-4xl md:text-5xl font-bold tracking-tight bg-gradient-to-r from-primary leading-normal to-purple-600 bg-clip-text text-transparent text-center">
                 My Claims
               </h1>
               <p className="text-muted-foreground mt-2 text-lg">Track and manage all your insurance claims</p>

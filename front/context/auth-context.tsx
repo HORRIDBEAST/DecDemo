@@ -59,6 +59,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setUser(null);
             setAuthToken(null);
           }
+        } else if (event === 'TOKEN_REFRESHED') {
+          // ✅ Handle automatic token refresh
+          if (session) {
+            setAuthToken(session.access_token);
+            console.log('🔄 Token refreshed automatically');
+          }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setAuthToken(null);
@@ -69,7 +75,32 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    return () => authListener.subscription.unsubscribe();
+    // ✅ Refresh session when user returns to tab (after inactivity)
+    const handleVisibilityChange = async () => {
+      if (document.visibilityState === 'visible') {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (session) {
+          // Check if token is close to expiry (within 5 minutes)
+          const expiresAt = session.expires_at || 0;
+          const now = Math.floor(Date.now() / 1000);
+          const timeUntilExpiry = expiresAt - now;
+          
+          if (timeUntilExpiry < 300) { // Less than 5 minutes
+            console.log('⏰ Token expiring soon, refreshing...');
+            await supabase.auth.refreshSession();
+          }
+        } else if (error) {
+          console.error('Session expired, please log in again');
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      authListener.subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [router, pathname, user]); // Add dependencies
 
   const signIn = async (email: string, pass: string) => {

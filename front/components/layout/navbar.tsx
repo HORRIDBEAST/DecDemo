@@ -19,26 +19,49 @@ import Link from 'next/link';
 import { FeedbackModal } from './feedback-modal';
 
 function NotificationBell() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const [notifications, setNotifications] = useState<any[]>([]);
+  const [lastFetchFailed, setLastFetchFailed] = useState(false);
   
   useEffect(() => {
-    // Don't fetch if user is not logged in
-    if (!user) return;
+    // Don't fetch if user is not logged in or still loading auth
+    if (!user || loading) return;
+
+    let retryCount = 0;
+    const maxRetries = 3;
 
     const fetchNotes = async () => {
       try {
         const data = await api.getNotifications();
         setNotifications(Array.isArray(data) ? data : []);
+        setLastFetchFailed(false);
+        retryCount = 0; // Reset retry count on success
       } catch (e) {
-        // Silently fail to avoid console spam on connection reset
+        setLastFetchFailed(true);
+        retryCount++;
+        
+        // If we've failed multiple times, stop polling temporarily
+        if (retryCount >= maxRetries) {
+          console.warn('⚠️ Notifications fetch failed multiple times. Pausing polling.');
+          // The interval will continue but won't fetch until retryCount resets
+        }
+        
         setNotifications([]);
       }
     };
+    
+    // Initial fetch
     fetchNotes();
-    const interval = setInterval(fetchNotes, 30000);
+    
+    // Poll every 30 seconds, but skip if we're in a failed state
+    const interval = setInterval(() => {
+      if (retryCount < maxRetries) {
+        fetchNotes();
+      }
+    }, 30000);
+    
     return () => clearInterval(interval);
-  }, [user]);
+  }, [user, loading]);
 
   const unreadCount = notifications.filter(n => !n.is_read).length;
 

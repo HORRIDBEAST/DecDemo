@@ -23,6 +23,11 @@ const getHeaders = () => {
 
 async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
+    // ✅ Handle 401 Unauthorized specifically
+    if (response.status === 401) {
+      throw new Error('Session expired. Please refresh the page or log in again.');
+    }
+    
     const text = await response.text();
     try {
         const errorData = JSON.parse(text);
@@ -57,15 +62,34 @@ getAdminClaims: async (): Promise<Claim[]> => {
       const res = await fetch(`${API_URL}/users/notifications`, {
         headers: getHeaders()
       });
-      if (!res.ok) {
-        console.error('Failed to fetch notifications');
-        return []; // Return empty array on error
+      
+      // ✅ Handle 401 specifically - don't spam logs for repeated failures
+      if (res.status === 401) {
+        // Only log once per session to avoid console spam
+        if (!sessionStorage.getItem('auth-warning-shown')) {
+          console.warn('⚠️ Session expired. Token will refresh automatically when you interact with the page.');
+          sessionStorage.setItem('auth-warning-shown', 'true');
+        }
+        throw new Error('UNAUTHORIZED'); // Throw so navbar can detect failure
       }
+      
+      // Clear warning flag on success
+      sessionStorage.removeItem('auth-warning-shown');
+      
+      if (!res.ok) {
+        console.error('Failed to fetch notifications:', res.status);
+        throw new Error(`Failed to fetch notifications: ${res.status}`);
+      }
+      
       const data = await res.json();
-      return Array.isArray(data) ? data : []; // Ensure it's always an array
+      return Array.isArray(data) ? data : [];
     } catch (error) {
+      // Don't log if it's our expected UNAUTHORIZED error
+      if (error instanceof Error && error.message === 'UNAUTHORIZED') {
+        throw error;
+      }
       console.error('Error fetching notifications:', error);
-      return []; // Return empty array on exception
+      throw error;
     }
   },
   verify: async (): Promise<{ user: User }> => {
