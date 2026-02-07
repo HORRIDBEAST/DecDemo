@@ -17,7 +17,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Loader2, FileText, DollarSign, Calendar, MapPin, Mic, Sparkles, ArrowRight, X } from 'lucide-react';
 import { VoiceClaimAssistant } from '@/components/claims/voice-assistant';
-import { SupportBot } from '@/components/layout/support-bot';
+import { ClaimDraftingAssistant } from '@/components/claims/claim-drafting-assistant';
 
 // 1. Define the form schema
 const claimFormSchema = z.object({
@@ -259,65 +259,56 @@ export default function NewClaimPage() {
                   />
                 </div>
 
-                {/* Full Width Description */}
-                <FormField
-                  control={form.control}
-                  name="description"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Detailed Description
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="ml-auto h-7 text-xs gap-1"
-                          onClick={() => setShowDraftingBot(true)}
-                        >
-                          <Sparkles className="h-3 w-3" />
-                          AI Help
-                        </Button>
-                      </FormLabel>
-                      <FormControl>
-                        <Textarea
-                          placeholder="Describe what happened in detail..."
-                          rows={6}
-                          className="resize-none border-border/50 hover:border-primary/50 transition-colors"
-                          {...field}
+                {/* Description with AI Assistant Side-by-Side */}
+                <div className={`grid gap-4 ${showDraftingBot ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1'}`}>
+                  <FormField
+                    control={form.control}
+                    name="description"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Detailed Description
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="ml-auto h-7 text-xs gap-1"
+                            onClick={() => setShowDraftingBot(!showDraftingBot)}
+                          >
+                            <Sparkles className="h-3 w-3" />
+                            {showDraftingBot ? 'Close AI' : 'AI Help'}
+                          </Button>
+                        </FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Describe what happened in detail..."
+                            rows={showDraftingBot ? 12 : 6}
+                            className="resize-none border-border/50 hover:border-primary/50 transition-colors"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {/* AI Drafting Assistant - Appears side-by-side */}
+                  {showDraftingBot && (
+                    <div className="animate-in slide-in-from-right duration-300">
+                      <div className="h-full">
+                        <ClaimDraftingAssistant
+                          currentDescription={form.watch('description') || ''}
+                          onInsertText={(text) => {
+                            form.setValue('description', text);
+                          }}
+                          onClose={() => setShowDraftingBot(false)}
+                          claimType={form.watch('type')}
                         />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                {/* Drafting Assistant Bot (Contextual) */}
-                {showDraftingBot && (
-                  <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-200">
-                    <div className="relative w-full max-w-md">
-                      {/* Close button for modal wrapper */}
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute -top-12 right-0 text-white hover:bg-white/20 h-10 w-10"
-                        onClick={() => setShowDraftingBot(false)}
-                      >
-                        <X className="h-6 w-6" />
-                      </Button>
-
-                      {/* ✅ Inline Bot Component */}
-                      <SupportBot
-                        type="inline"
-                        defaultOpen={true}
-                        onInsertText={(text) => {
-                          form.setValue('description', text);
-                          setShowDraftingBot(false);
-                        }}
-                      />
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
+                </div>
                 
                 {/* Submit Button */}
                 <div className="pt-4">
