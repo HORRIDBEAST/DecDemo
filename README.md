@@ -22,6 +22,8 @@
 
 **DecentralizedClaim** revolutionizes insurance claim processing by replacing opaque manual workflows with a transparent, verifiable, and fully automated system.  This platform combines cutting-edge AI agents with blockchain immutability to process claims in **under 2 minutes** while maintaining complete transparency.
 
+Project Walkthough Youtube Viedo Link: [Youtube](https://www.youtube.com/watch?v=MfzmgfHc-Bs)
+
 ### 🎯 The Problem it Solves:
 
 Traditional insurance companies operate as "black boxes" where:
@@ -38,8 +40,6 @@ A **Multi-Agent AI system** orchestrated by **LangGraph** that:
 - Stores decisions on **Polygon blockchain** for immutability
 - Uses **external data sources** (weather, market prices) to detect fraud
 - Offers **voice-first** claim filing for accessibility
-
-- Youtube Link: [Youtube](https://www.youtube.com/watch?v=MfzmgfHc-Bs)
   
 ---
 
@@ -216,12 +216,15 @@ graph LR
     Agents --> Storage
     Agents --> Contract
     Contract --> Polygon
-    
-    style Client fill:#e3f2fd
-    style Backend fill:#fff3e0
-    style AI fill:#f3e5f5
-    style Data fill:#e8f5e9
-    style Blockchain fill:#fce4ec
+
+    %% LAYER COLORS (Optimized for Black Background)
+
+    style Client fill:#0D47A1,color:#ffffff,stroke:#42A5F5,stroke-width:2px
+    style Backend fill:#E65100,color:#ffffff,stroke:#FF9800,stroke-width:2px
+    style AI fill:#4A148C,color:#ffffff,stroke:#BA68C8,stroke-width:2px
+    style Data fill:#1B5E20,color:#ffffff,stroke:#66BB6A,stroke-width:2px
+    style Blockchain fill:#880E4F,color:#ffffff,stroke:#F06292,stroke-width:2px
+
 ```
 
 ### Service Responsibilities
