@@ -20,9 +20,9 @@
 
 ## 📖 Overview
 
-**DecentralizedClaim** revolutionizes insurance claim processing by replacing opaque manual workflows with a transparent, verifiable, and fully automated system. Built by **Rajas Deshpande**, this platform combines cutting-edge AI agents with blockchain immutability to process claims in **under 2 minutes** while maintaining complete transparency.
+**DecentralizedClaim** revolutionizes insurance claim processing by replacing opaque manual workflows with a transparent, verifiable, and fully automated system.  This platform combines cutting-edge AI agents with blockchain immutability to process claims in **under 2 minutes** while maintaining complete transparency.
 
-### 🎯 The Problem We Solve
+### 🎯 The Problem it Solves:
 
 Traditional insurance companies operate as "black boxes" where:
 - Claims take **weeks** to process
@@ -30,7 +30,7 @@ Traditional insurance companies operate as "black boxes" where:
 - Manual review introduces **bias** and **human error**
 - Users have **zero visibility** into the decision-making process
 
-### ✨ Our Solution
+### ✨ My Solution
 
 A **Multi-Agent AI system** orchestrated by **LangGraph** that:
 - Processes claims in **30-60 seconds**
@@ -39,6 +39,8 @@ A **Multi-Agent AI system** orchestrated by **LangGraph** that:
 - Uses **external data sources** (weather, market prices) to detect fraud
 - Offers **voice-first** claim filing for accessibility
 
+- Youtube Link: [Youtube](https://www.youtube.com/watch?v=MfzmgfHc-Bs)
+  
 ---
 
 ## 🚀 Key Features
@@ -96,14 +98,18 @@ graph TB
     Reject --> WebSocket[📡 WebSocket Notification]
     Approve --> WebSocket
     WebSocket --> User[👤 User Receives Decision]
-    
-    style DocAgent fill:#e3f2fd
-    style DamageAgent fill:#f3e5f5
-    style FraudAgent fill:#fff3e0
-    style SettlementAgent fill:#e8f5e9
-    style Blockchain fill:#fce4ec
-    style Approve fill:#c8e6c9
-    style Reject fill:#ffcdd2
+
+    %% Darker Agent Colors for Better Text Visibility
+    style DocAgent fill:#1565C0,color:#ffffff,stroke:#0D47A1,stroke-width:2px
+    style DamageAgent fill:#6A1B9A,color:#ffffff,stroke:#4A148C,stroke-width:2px
+    style FraudAgent fill:#EF6C00,color:#ffffff,stroke:#E65100,stroke-width:2px
+    style SettlementAgent fill:#2E7D32,color:#ffffff,stroke:#1B5E20,stroke-width:2px
+    style Blockchain fill:#AD1457,color:#ffffff,stroke:#880E4F,stroke-width:2px
+
+    %% Improve Approved / Rejected Contrast
+    style Approve fill:#2E7D32,color:#ffffff,stroke:#1B5E20,stroke-width:2px
+    style Reject fill:#C62828,color:#ffffff,stroke:#8E0000,stroke-width:2px
+
 ```
 
 ### ⛓️ Blockchain Immutability Layer
