@@ -14,12 +14,17 @@ export function VoiceClaimAssistant({ onFormFill }: VoiceAssistantProps) {
   const [isCallActive, setIsCallActive] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const vapiRef = useRef<Vapi | null>(null);
+  const isInitializing = useRef(false);
 
   useEffect(() => {
-    // 1. Initialize Vapi only once
-    if (!vapiRef.current) {
+    // 1. Initialize Vapi only once (prevent double initialization in React Strict Mode)
+    if (!vapiRef.current && !isInitializing.current) {
+      isInitializing.current = true;
       vapiRef.current = new Vapi(process.env.NEXT_PUBLIC_VAPI_PUBLIC_KEY!);
     }
+    
+    if (!vapiRef.current) return;
+    
     const vapi = vapiRef.current;
 
     // 2. Event Handlers
@@ -89,6 +94,11 @@ export function VoiceClaimAssistant({ onFormFill }: VoiceAssistantProps) {
       vapi.off('speech-start', onSpeechStart);
       vapi.off('speech-end', onSpeechEnd);
       vapi.off('message', onMessage);
+      
+      // Stop any active call and cleanup
+      if (isCallActive) {
+        vapi.stop();
+      }
     };
   }, [onFormFill]);
 
