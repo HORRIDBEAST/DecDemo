@@ -11,7 +11,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User, Settings, Bell, HelpCircle, TrendingUp, Shield, Menu, X } from 'lucide-react';
+import { LogOut, User, Settings, Bell, Shield, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -146,6 +146,10 @@ export default function Navbar() {
               Finance News
             </Link>
             
+            <Link href="/verify" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              Verify
+            </Link>
+            
             <Link href="/help" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
               Help Center
             </Link>
@@ -208,22 +212,20 @@ export default function Navbar() {
             className="block text-sm font-medium text-foreground/80 hover:text-primary py-2 transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <TrendingUp className="w-4 h-4 inline mr-2" />
             Finance News
           </Link>
           <Link 
-            href="/reviews" 
+            href="/verify" 
             className="block text-sm font-medium text-foreground/80 hover:text-primary py-2 transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            Reviews
+            Verify
           </Link>
           <Link 
             href="/help" 
             className="block text-sm font-medium text-foreground/80 hover:text-primary py-2 transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >
-            <HelpCircle className="w-4 h-4 inline mr-2" />
             Help Center
           </Link>
           

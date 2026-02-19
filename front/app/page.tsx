@@ -76,6 +76,9 @@ export default function LandingPage() {
               <Link href="/finance" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
                 Finance News
               </Link>
+              <Link href="/verify" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+                Verify
+              </Link>
               <Link href="/reviews" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
                 Testimonials
               </Link>
@@ -116,6 +119,7 @@ export default function LandingPage() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-background px-4 py-6 space-y-4 animate-in slide-in-from-top-5">
             <Link href="/finance" className="block text-sm font-medium text-foreground/80 py-2">Finance News</Link>
+            <Link href="/verify" className="block text-sm font-medium text-foreground/80 py-2">Verify</Link>
             <Link href="/reviews" className="block text-sm font-medium text-foreground/80 py-2">Reviews</Link>
             <Link href="/help" className="block text-sm font-medium text-foreground/80 py-2">Help Center</Link>
             <div className="pt-4 flex flex-col gap-3">

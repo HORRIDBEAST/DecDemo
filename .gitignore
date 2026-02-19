@@ -4,7 +4,7 @@ node_modules/
 # Environment files
 .env
 *.env
-
+asach.txt
 # Build / Dist folders
 dist/
 build/

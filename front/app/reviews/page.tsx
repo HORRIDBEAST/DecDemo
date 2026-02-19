@@ -57,6 +57,9 @@ export default function ReviewsPage() {
               <Link href="/finance" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 Finance News
               </Link>
+              <Link href="/verify" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                Verify
+              </Link>
               <Link href="/help" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 Help Center
               </Link>

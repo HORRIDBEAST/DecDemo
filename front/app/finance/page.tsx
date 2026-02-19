@@ -120,6 +120,9 @@ export default function FinancePage() {
           </span>
         </Link>
         <div className="flex gap-4">
+          <Link href="/verify" className="text-sm font-medium text-slate-600 hover:text-blue-600 pt-2">
+            Verify
+          </Link>
           <Link href="/reviews" className="text-sm font-medium text-slate-600 hover:text-blue-600 pt-2">
             Reviews
           </Link>
@@ -127,10 +130,12 @@ export default function FinancePage() {
             Help Center
           </Link>
           {user ? (
-            <Link href="/dashboard"><Button>Dashboard</Button></Link>
-          ) : (
-            <Link href="/login"><Button variant="outline">Login</Button></Link>
-          )}
+ <Button asChild className="rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40">
+                  <Link href="/dashboard">Go to Dashboard</Link>
+                </Button>          ) : (
+ <Button asChild variant="outline" className="rounded-full">
+                  <Link href="/login">Login</Link>
+                </Button>          )}
         </div>
       </div>
 

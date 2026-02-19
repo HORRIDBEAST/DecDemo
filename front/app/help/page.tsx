@@ -69,6 +69,9 @@ export default function HelpPage() {
               <Link href="/finance" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 Finance News
               </Link>
+              <Link href="/verify" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
+                Verify
+              </Link>
               <Link href="/reviews" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
                 Reviews
               </Link>
