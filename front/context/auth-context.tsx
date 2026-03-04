@@ -3,8 +3,9 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { supabase } from '@/lib/supabase';
 import { api, setAuthToken } from '@/lib/api'; 
-import { useRouter, usePathname } from 'next/navigation'; // <--- ADD usePathname
+import { useRouter, usePathname } from 'next/navigation';
 import { User } from '@/lib/types';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -22,17 +23,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname(); // <--- Get current path
+  const pathname = usePathname();
+
+  // Session expiry constants
+  const INACTIVITY_LIMIT = 4 * 24 * 60 * 60 * 1000; // 4 days
+  const ABSOLUTE_LIMIT = 7 * 24 * 60 * 60 * 1000; // 7 days
+  const UPDATE_THROTTLE = 60 * 1000; // 1 minute
+
+  // Helper function to check if session should be expired
+  const shouldExpireSession = () => {
+    const lastActivity = localStorage.getItem('lastActivity');
+    const loginTimestamp = localStorage.getItem('loginTimestamp');
+    const now = Date.now();
+
+    const isInactive = lastActivity && (now - parseInt(lastActivity) > INACTIVITY_LIMIT);
+    const isAbsoluteExpired = loginTimestamp && (now - parseInt(loginTimestamp) > ABSOLUTE_LIMIT);
+
+    return { isInactive, isAbsoluteExpired, shouldExpire: !!(isInactive || isAbsoluteExpired) };
+  };
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         // Don't set loading to true immediately on every event to prevent UI flickering on tab switch
-        if (event === 'INITIAL_SESSION') setLoading(true); 
+        if (event === 'INITIAL_SESSION') setLoading(true);
+
+        // ⚠️ CRITICAL: Check custom session expiry BEFORE processing any auth events
+        if (event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION') {
+          const { isInactive, isAbsoluteExpired, shouldExpire } = shouldExpireSession();
+          
+          if (shouldExpire) {
+            console.log('🚫 Session expired - preventing token refresh');
+            
+            // Clear timestamps and sign out
+            localStorage.removeItem('lastActivity');
+            localStorage.removeItem('loginTimestamp');
+            await supabase.auth.signOut();
+            
+            // Show specific message
+            if (isInactive) {
+              toast.info("Your session expired due to inactivity (4 days). Please log in again.");
+            } else if (isAbsoluteExpired) {
+              toast.info("For your security, sessions expire after 7 days. Please log in again.");
+            }
+            
+            setLoading(false);
+            router.push('/login');
+            return; // Stop processing this event
+          }
+        }
         
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           if (session) {
             setAuthToken(session.access_token);
+            
+            // Set login timestamp on fresh sign-in
+            if (event === 'SIGNED_IN') {
+              localStorage.setItem('loginTimestamp', Date.now().toString());
+              localStorage.setItem('lastActivity', Date.now().toString());
+            }
+            
             try {
               // Optimistic check: If we already have a user and the ID matches, don't re-fetch
               // This prevents unnecessary API calls on tab focus
@@ -62,14 +112,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setAuthToken(null);
           }
         } else if (event === 'TOKEN_REFRESHED') {
-          // ✅ Handle automatic token refresh
+          // ✅ Token refresh allowed (passed expiry checks above)
           if (session) {
             setAuthToken(session.access_token);
-            console.log('🔄 Token refreshed automatically');
+            console.log('✅ Token refreshed (session still valid)');
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setAuthToken(null);
+          // Clear session tracking timestamps
+          localStorage.removeItem('loginTimestamp');
+          localStorage.removeItem('lastActivity');
           router.push('/login');
         }
         
@@ -77,12 +130,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    // ✅ Refresh session when user returns to tab (after inactivity)
+    // ✅ Check session validity when user returns to tab
     const handleVisibilityChange = async () => {
       if (document.visibilityState === 'visible') {
+        // First check our custom expiry rules
+        const { isInactive, isAbsoluteExpired, shouldExpire } = shouldExpireSession();
+        
+        if (shouldExpire) {
+          console.log('🚫 Session expired on tab focus');
+          localStorage.removeItem('lastActivity');
+          localStorage.removeItem('loginTimestamp');
+          await supabase.auth.signOut();
+          
+          if (isInactive) {
+            toast.info("Your session expired due to inactivity (4 days). Please log in again.");
+          } else if (isAbsoluteExpired) {
+            toast.info("For your security, sessions expire after 7 days. Please log in again.");
+          }
+          return;
+        }
+
+        // If session is still valid, check Supabase token expiry
         const { data: { session }, error } = await supabase.auth.getSession();
         if (session) {
-          // Check if token is close to expiry (within 5 minutes)
           const expiresAt = session.expires_at || 0;
           const now = Math.floor(Date.now() / 1000);
           const timeUntilExpiry = expiresAt - now;
@@ -104,6 +174,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [router, pathname, user]); // Add dependencies
+
+  // Activity tracking useEffect
+  useEffect(() => {
+    if (!user) return;
+
+    let lastUpdateTime = Date.now();
+
+    // Mark the absolute login time if it's a fresh login
+    if (!localStorage.getItem('loginTimestamp')) {
+      localStorage.setItem('loginTimestamp', Date.now().toString());
+    }
+    
+    // Set initial activity
+    localStorage.setItem('lastActivity', Date.now().toString());
+
+    const updateActivity = () => {
+      const now = Date.now();
+      if (now - lastUpdateTime > UPDATE_THROTTLE) {
+        localStorage.setItem('lastActivity', now.toString());
+        lastUpdateTime = now;
+      }
+    };
+
+    const checkSessionValidity = async () => {
+      const { isInactive, isAbsoluteExpired, shouldExpire } = shouldExpireSession();
+
+      if (shouldExpire) {
+        console.log('⏰ Periodic check: Session expired');
+        
+        // Clear storage and sign out
+        localStorage.removeItem('lastActivity');
+        localStorage.removeItem('loginTimestamp');
+        await supabase.auth.signOut();
+        
+        // Show specific message based on why they were logged out
+        if (isInactive) {
+          toast.info("Your session expired due to inactivity (4 days). Please log in again.");
+        } else if (isAbsoluteExpired) {
+          toast.info("For your security, sessions expire after 7 days. Please log in again.");
+        }
+        
+        router.push('/login');
+      }
+    };
+
+    // Listen for user interactions
+    window.addEventListener('click', updateActivity);
+    window.addEventListener('scroll', updateActivity);
+    window.addEventListener('keypress', updateActivity);
+
+    // Check validity every 5 minutes
+    const intervalId = setInterval(checkSessionValidity, 5 * 60 * 1000);
+    
+    // Check immediately when tab becomes visible
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        checkSessionValidity();
+      }
+    };
+    window.addEventListener('visibilitychange', handleVisibility);
+
+    return () => {
+      window.removeEventListener('click', updateActivity);
+      window.removeEventListener('scroll', updateActivity);
+      window.removeEventListener('keypress', updateActivity);
+      window.removeEventListener('visibilitychange', handleVisibility);
+      clearInterval(intervalId);
+    };
+  }, [user, router]);
 
   const signIn = async (email: string, pass: string) => {
     const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
@@ -127,6 +266,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
+    // Clear session tracking timestamps
+    localStorage.removeItem('loginTimestamp');
+    localStorage.removeItem('lastActivity');
+    
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   };
