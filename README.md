@@ -175,54 +175,69 @@ Custom MCP servers give agents "superpowers":
 
 ```mermaid
 graph LR
-    subgraph Client ["🖥️ Frontend (Next.js)"]
-        UI[User Interface]
-        Voice[🎤 Vapi.ai Voice]
-        Chatbot[💬 AI Chatbot]
-    end
-    
-    subgraph Backend ["⚙️ Backend (NestJS)"]
-        API[REST API]
-        WS[WebSocket Gateway]
-        Auth[Supabase Auth]
-    end
-    
-    subgraph AI ["🧠 AI Service (Python/FastAPI)"]
-        LG[LangGraph Orchestrator]
-        Agents[Multi-Agent DAG]
-        MCP[MCP Tools]
-    end
-    
-    subgraph Data ["💾 Data Layer"]
-        DB[(Supabase PostgreSQL)]
-        Storage[Supabase Storage]
-    end
-    
-    subgraph Blockchain ["⛓️ Blockchain"]
-        Contract[Solidity Smart Contract]
-        Polygon[Polygon Amoy]
-    end
-    
-    UI --> API
-    Voice --> API
-    Chatbot --> API
-    API --> Auth
-    API --> WS
-    API --> LG
-    WS --> UI
-    LG --> Agents
-    Agents --> MCP
-    Agents --> DB
-    Agents --> Storage
-    Agents --> Contract
-    Contract --> Polygon
-    
-    style Client fill:#e3f2fd
-    style Backend fill:#fff3e0
-    style AI fill:#f3e5f5
-    style Data fill:#e8f5e9
-    style Blockchain fill:#fce4ec
-```
+
+%% ---------- FRONTEND ----------
+subgraph Client["🖥️ Frontend (Next.js)"]
+UI[User Interface]
+Voice[🎤 Vapi.ai Voice]
+Chatbot[💬 AI Chatbot]
+end
+
+%% ---------- BACKEND ----------
+subgraph Backend["⚙️ Backend (NestJS)"]
+API[REST API]
+WS[WebSocket Gateway]
+Auth[Supabase Auth]
+end
+
+%% ---------- AI ----------
+subgraph AI["🧠 AI Service (Python/FastAPI)"]
+LG[LangGraph Orchestrator]
+Agents[Multi-Agent DAG]
+MCP[MCP Tools]
+end
+
+%% ---------- DATA ----------
+subgraph Data["💾 Data Layer"]
+DB[(Supabase PostgreSQL)]
+Storage[Supabase Storage]
+end
+
+%% ---------- BLOCKCHAIN ----------
+subgraph Blockchain["⛓️ Blockchain"]
+Contract[Solidity Smart Contract]
+Polygon[Polygon Amoy]
+end
+
+
+%% ---------- FLOWS ----------
+UI --> API
+Voice --> API
+Chatbot --> API
+API --> Auth
+API --> WS
+API --> LG
+WS --> UI
+LG --> Agents
+Agents --> MCP
+Agents --> DB
+Agents --> Storage
+Agents --> Contract
+Contract --> Polygon
+
+
+%% ---------- STYLING ----------
+classDef frontend fill:#0d47a1,color:#ffffff,stroke:#082567,stroke-width:2px
+classDef backend fill:#ef6c00,color:#ffffff,stroke:#a84300,stroke-width:2px
+classDef ai fill:#6a1b9a,color:#ffffff,stroke:#38006b,stroke-width:2px
+classDef data fill:#2e7d32,color:#ffffff,stroke:#005005,stroke-width:2px
+classDef blockchain fill:#c2185b,color:#ffffff,stroke:#7b1b36,stroke-width:2px
+
+class UI,Voice,Chatbot frontend
+class API,WS,Auth backend
+class LG,Agents,MCP ai
+class DB,Storage data
+class Contract,Polygon blockchain```
 
 ### Service Responsibilities
 
