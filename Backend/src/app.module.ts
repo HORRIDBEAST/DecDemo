@@ -9,6 +9,7 @@ import { WebSocketModule } from './websocket/websocket.module';
 import { BlockchainModule } from './blockchain/blockchain.module';
 import { SupabaseModule } from './supabase/supabase.module'; // Changed from FirebaseModule
 import { AiAgentsModule } from './ai-agents/ai-agents.module';
+import { FinanceController } from './users/finance.controller';
 
 @Module({
   imports: [
@@ -23,7 +24,7 @@ import { AiAgentsModule } from './ai-agents/ai-agents.module';
     BlockchainModule,
     AiAgentsModule,
   ],
-   controllers: [AppController], // Add this
+   controllers: [AppController, FinanceController], // Add this
   providers: [AppService], // Add this
 })
 export class AppModule {}
