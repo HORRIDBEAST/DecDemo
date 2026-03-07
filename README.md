@@ -237,7 +237,8 @@ class UI,Voice,Chatbot frontend
 class API,WS,Auth backend
 class LG,Agents,MCP ai
 class DB,Storage data
-class Contract,Polygon blockchain```
+class Contract,Polygon blockchain
+```
 
 ### Service Responsibilities
 
