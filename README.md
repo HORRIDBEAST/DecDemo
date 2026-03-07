@@ -98,14 +98,18 @@ graph TB
     Reject --> WebSocket[📡 WebSocket Notification]
     Approve --> WebSocket
     WebSocket --> User[👤 User Receives Decision]
-    
-    style DocAgent fill:#e3f2fd
-    style DamageAgent fill:#f3e5f5
-    style FraudAgent fill:#fff3e0
-    style SettlementAgent fill:#e8f5e9
-    style Blockchain fill:#fce4ec
-    style Approve fill:#c8e6c9
-    style Reject fill:#ffcdd2
+
+    %% Darker Agent Colors for Better Text Visibility
+    style DocAgent fill:#1565C0,color:#ffffff,stroke:#0D47A1,stroke-width:2px
+    style DamageAgent fill:#6A1B9A,color:#ffffff,stroke:#4A148C,stroke-width:2px
+    style FraudAgent fill:#EF6C00,color:#ffffff,stroke:#E65100,stroke-width:2px
+    style SettlementAgent fill:#2E7D32,color:#ffffff,stroke:#1B5E20,stroke-width:2px
+    style Blockchain fill:#AD1457,color:#ffffff,stroke:#880E4F,stroke-width:2px
+
+    %% Improve Approved / Rejected Contrast
+    style Approve fill:#2E7D32,color:#ffffff,stroke:#1B5E20,stroke-width:2px
+    style Reject fill:#C62828,color:#ffffff,stroke:#8E0000,stroke-width:2px
+
 ```
 
 ### ⛓️ Blockchain Immutability Layer
