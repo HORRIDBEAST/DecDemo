@@ -20,9 +20,11 @@
 
 ## 📖 Overview
 
-**DecentralizedClaim** revolutionizes insurance claim processing by replacing opaque manual workflows with a transparent, verifiable, and fully automated system. Built by **Rajas Deshpande**, this platform combines cutting-edge AI agents with blockchain immutability to process claims in **under 2 minutes** while maintaining complete transparency.
+**DecentralizedClaim** revolutionizes insurance claim processing by replacing opaque manual workflows with a transparent, verifiable, and fully automated system.  This platform combines cutting-edge AI agents with blockchain immutability to process claims in **under 2 minutes** while maintaining complete transparency.
 
-### 🎯 The Problem We Solve
+Project Walkthough Youtube Viedo Link: [Youtube](https://www.youtube.com/watch?v=MfzmgfHc-Bs)
+
+### 🎯 The Problem it Solves:
 
 Traditional insurance companies operate as "black boxes" where:
 - Claims take **weeks** to process
@@ -30,7 +32,7 @@ Traditional insurance companies operate as "black boxes" where:
 - Manual review introduces **bias** and **human error**
 - Users have **zero visibility** into the decision-making process
 
-### ✨ Our Solution
+### ✨ My Solution
 
 A **Multi-Agent AI system** orchestrated by **LangGraph** that:
 - Processes claims in **30-60 seconds**
@@ -38,7 +40,7 @@ A **Multi-Agent AI system** orchestrated by **LangGraph** that:
 - Stores decisions on **Polygon blockchain** for immutability
 - Uses **external data sources** (weather, market prices) to detect fraud
 - Offers **voice-first** claim filing for accessibility
-
+  
 ---
 
 ## 🚀 Key Features
