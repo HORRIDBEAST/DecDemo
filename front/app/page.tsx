@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import Link from "next/link"
 import { useAuth } from "@/context/auth-context"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,98 @@ import {
 export default function LandingPage() {
   const { user, loading } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const hasAutoStartedTour = useRef(false)
+
+  const startTour = async (isManual = false) => {
+    const TOUR_SEEN_KEY = "dc-tour-seen-v1"
+    if (!isManual && localStorage.getItem(TOUR_SEEN_KEY)) return
+
+    const Shepherd = (await import("shepherd.js")).default
+
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        classes: "dc-shepherd",
+        cancelIcon: { enabled: true },
+        scrollTo: { behavior: "smooth", block: "center" },
+      },
+    })
+
+    const steps = [
+      {
+        id: "nav-map",
+        selector: '[data-tour="nav-map"]',
+        title: "Quick Navigation",
+        text: "Use these links to jump to Finance News, Verify, Reviews, and Help Center.",
+      },
+      {
+        id: "verify",
+        selector: '[data-tour="verify-link"]',
+        title: "Public Verification",
+        text: "Anyone can verify approved claims on blockchain from this page.",
+      },
+      {
+        id: "start-claim",
+        selector: '[data-tour="start-claim"]',
+        title: "Start Your Claim",
+        text: "This is your fastest path to begin a claim submission.",
+      },
+      {
+        id: "dashboard",
+        selector: '[data-tour="dashboard-cta"]',
+        title: "Access Dashboard",
+        text: "Track claims, statuses, and notifications from your dashboard.",
+      },
+    ].filter((step) => document.querySelector(step.selector))
+
+    steps.forEach((step, index) => {
+      const isLast = index === steps.length - 1
+      tour.addStep({
+        id: step.id,
+        title: step.title,
+        text: step.text,
+        attachTo: { element: step.selector, on: "bottom" },
+        buttons: [
+          ...(index > 0
+            ? [
+                {
+                  text: "Back",
+                  classes: "shepherd-button-secondary",
+                  action: tour.back,
+                },
+              ]
+            : []),
+          {
+            text: isLast ? "Done" : "Next",
+            action: isLast ? tour.complete : tour.next,
+          },
+        ],
+      })
+    })
+
+    if (steps.length === 0) return
+
+    tour.on("complete", () => {
+      localStorage.setItem(TOUR_SEEN_KEY, "1")
+    })
+
+    tour.on("cancel", () => {
+      localStorage.setItem(TOUR_SEEN_KEY, "1")
+    })
+
+    tour.start()
+  }
+
+  useEffect(() => {
+    if (hasAutoStartedTour.current) return
+    hasAutoStartedTour.current = true
+
+    const timer = setTimeout(() => {
+      startTour(false)
+    }, 700)
+
+    return () => clearTimeout(timer)
+  }, [])
 
   const features = [
     {
@@ -62,7 +154,7 @@ export default function LandingPage() {
       <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
         <div className="w-full px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href="/" className="flex items-center gap-2" data-tour="brand">
               <div className="bg-primary/10 p-2 rounded-lg">
                 <Shield className="w-6 h-6 text-primary" />
               </div>
@@ -72,11 +164,11 @@ export default function LandingPage() {
             </Link>
 
             {/* Desktop Nav */}
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-8" data-tour="nav-map">
               <Link href="/finance" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
                 Finance News
               </Link>
-              <Link href="/verify" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+              <Link href="/verify" data-tour="verify-link" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
                 Verify
               </Link>
               <Link href="/reviews" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
@@ -86,6 +178,12 @@ export default function LandingPage() {
                 Help Center
               </Link>
               <div className="h-4 w-px bg-border" />
+              <button
+                onClick={() => startTour(true)}
+                className="text-xs font-medium text-foreground/60 hover:text-primary transition-colors"
+              >
+                Take Tour
+              </button>
               
               {/* Conditional rendering based on auth state */}
               {!loading && (
@@ -119,9 +217,15 @@ export default function LandingPage() {
         {isMobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-background px-4 py-6 space-y-4 animate-in slide-in-from-top-5">
             <Link href="/finance" className="block text-sm font-medium text-foreground/80 py-2">Finance News</Link>
-            <Link href="/verify" className="block text-sm font-medium text-foreground/80 py-2">Verify</Link>
+            <Link href="/verify" className="block text-sm font-medium text-foreground/80 py-2" data-tour="verify-link">Verify</Link>
             <Link href="/reviews" className="block text-sm font-medium text-foreground/80 py-2">Reviews</Link>
             <Link href="/help" className="block text-sm font-medium text-foreground/80 py-2">Help Center</Link>
+            <button
+              onClick={() => startTour(true)}
+              className="block text-left text-sm font-medium text-foreground/80 py-2"
+            >
+              Take Tour
+            </button>
             <div className="pt-4 flex flex-col gap-3">
               
               {/* Conditional rendering for mobile based on auth state */}
@@ -174,7 +278,7 @@ export default function LandingPage() {
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
             <Button asChild size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 transition-all hover:scale-105">
-              <Link href="/signup">
+              <Link href="/signup" data-tour="start-claim">
                 Start Your Claim <ArrowRight className="ml-2 w-5 h-5" />
               </Link>
             </Button>
@@ -382,7 +486,7 @@ export default function LandingPage() {
               </Button>
             )}
             <Button asChild variant="secondary" size="lg" className="h-14 px-10 text-lg text-white rounded-full hover:bg-gray-500 bg-gray-800 border">
-              <Link href={user ? "/dashboard" : "/login"}>Access Dashboard</Link>
+              <Link href={user ? "/dashboard" : "/login"} data-tour="dashboard-cta">Access Dashboard</Link>
             </Button>
           </div>
         </div>

@@ -1,2 +1,5 @@
 aiagents -> uvicorn src.main:app --reload --port 8000
 backend ->npm run start:dev
+
+#to request pol :- https://faucet.polygon.technology/ ->0x8af10A5a2A30aeedF46E9F28c5e0A2976b194263
+#to check transaction :- https://amoy.polygonscan.com/address/0x8af10A5a2A30aeedF46E9F28c5e0A2976b194263

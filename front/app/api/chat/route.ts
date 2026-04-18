@@ -47,6 +47,33 @@ const KNOWLEDGE_BASE = {
     - **Financial Intelligence Hub:** A self-updating news feed powered by **Tavily API** (No database required).
     - **Secure Storage:** Hybrid model using **Supabase** for relational data and encrypted buckets for sensitive documents (GDPR compliant).
     - **Admin Governance:** Role-based dashboard for "Human-in-the-Loop" review of high-risk claims.
+    - **Public Verify Page:** Anyone can verify blockchain-anchored claims without logging in using claim UUID or transaction hash.
+    - **Guided Product Tours:** First-time user tours on homepage and dashboard to explain key navigation and actions.
+  `,
+
+  analytics: `
+    **Analytics Feature (/analytics):**
+    - Purpose: Gives users a visual overview of claim performance and trends.
+    - Typical insights include claim volume patterns, status distribution, payout movement, and operational signals.
+    - Works alongside dashboard summary cards to support faster decision-making.
+    - Used by users to understand claim behavior over time instead of checking claims one-by-one.
+  `,
+
+  dashboardFeatures: `
+    **Dashboard Left Panel (Sidebar) Features:**
+    - **Dashboard (/dashboard):** Main overview with total claims, in-review counts, requested/settled value, activity, and quick insights.
+    - **My Claims (/claims):** Full list of submitted claims with statuses and details.
+    - **New Claim (/claims/new):** Entry point to file a new claim with incident details and uploads.
+    - **Analytics (/analytics):** Visual trend and performance view for claims and outcomes.
+    - **Admin Panel (/admin):** Visible only to admin role for governance workflows.
+
+    **Dashboard Top Navbar Features:**
+    - **Finance News (/finance):** Financial intelligence feed and market context.
+    - **Verify (/verify):** Public blockchain verification for approved claims.
+    - **Help Center (/help):** FAQs and support contact flows.
+    - **Feedback:** In-app feedback collection modal.
+    - **Notifications (Bell):** Recent updates with quick link to inbox.
+    - **Profile Menu:** Account options and logout.
   `,
 
   claimProcess: `
@@ -75,10 +102,13 @@ const KNOWLEDGE_BASE = {
   
   navigation: `
     **Key Pages:**
-    - /dashboard - View all your claims
+    - /dashboard - Overview of claims, activity, and key metrics
+    - /claims - View all your submitted claims
     - /claims/new - File a new claim
+    - /analytics - Claim analytics and trends
+    - /verify - Public blockchain claim verification
     - /reviews - See community reviews
-    - /finance - Financial dashboard (admin only)
+    - /finance - Financial intelligence and market news
     - /help - Help center and contact support
   `,
   
@@ -156,10 +186,14 @@ export async function POST(req: Request) {
            * techStack - Full technology stack details
            * architecture - System architecture and Multi-Agent DAG
            * features - Platform features (Voice AI, MCP, Blockchain)
+           * analytics - What analytics feature does and why it is used
+           * dashboardFeatures - Left panel and top navbar features on dashboard
            * claimProcess - How to file claims
            * claimStatus - Understanding claim statuses
            * fraudDetection - How AI detects fraud
            * navigation - Available pages
+
+         - If the user asks specifically about "analytics", "left panel", "sidebar", "top navbar", "dashboard features", or "what this section is for", prefer analytics or dashboardFeatures topics first.
          
          - When users ask to navigate, go to a page, or mention locations (dashboard, new claim, reviews, help, finance), use the navigate_to_page function.
          
@@ -179,7 +213,7 @@ export async function POST(req: Request) {
             properties: {
               topic: {
                 type: "string",
-                enum: ["projectOverview", "techStack", "architecture", "features", "claimProcess", "navigation", "claimStatus", "fraudDetection"],
+                enum: ["projectOverview", "techStack", "architecture", "features", "analytics", "dashboardFeatures", "claimProcess", "navigation", "claimStatus", "fraudDetection"],
                 description: "The topic to search for in the knowledge base"
               },
             },
@@ -197,7 +231,7 @@ export async function POST(req: Request) {
             properties: {
               path: {
                 type: "string",
-                enum: ["/dashboard", "/claims/new", "/reviews", "/help", "/finance"],
+                enum: ["/dashboard", "/claims", "/claims/new", "/analytics", "/verify", "/reviews", "/help", "/finance"],
                 description: "The route path to navigate to"
               },
             },

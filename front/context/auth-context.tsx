@@ -24,6 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
+  const SESSION_EXPIRED_REASON_KEY = 'sessionExpiredReason';
 
   // Session expiry constants
   const INACTIVITY_LIMIT = 4 * 24 * 60 * 60 * 1000; // 4 days
@@ -58,6 +59,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             // Clear timestamps and sign out
             localStorage.removeItem('lastActivity');
             localStorage.removeItem('loginTimestamp');
+            localStorage.setItem(SESSION_EXPIRED_REASON_KEY, isInactive ? 'inactive' : 'absolute');
+            setUser(null);
+            setAuthToken(null);
             await supabase.auth.signOut();
             
             // Show specific message
@@ -140,6 +144,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           console.log('🚫 Session expired on tab focus');
           localStorage.removeItem('lastActivity');
           localStorage.removeItem('loginTimestamp');
+          localStorage.setItem(SESSION_EXPIRED_REASON_KEY, isInactive ? 'inactive' : 'absolute');
+          setUser(null);
+          setAuthToken(null);
           await supabase.auth.signOut();
           
           if (isInactive) {
@@ -206,6 +213,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         // Clear storage and sign out
         localStorage.removeItem('lastActivity');
         localStorage.removeItem('loginTimestamp');
+        localStorage.setItem(SESSION_EXPIRED_REASON_KEY, isInactive ? 'inactive' : 'absolute');
+        setUser(null);
+        setAuthToken(null);
         await supabase.auth.signOut();
         
         // Show specific message based on why they were logged out
@@ -269,6 +279,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Clear session tracking timestamps
     localStorage.removeItem('loginTimestamp');
     localStorage.removeItem('lastActivity');
+    localStorage.removeItem(SESSION_EXPIRED_REASON_KEY);
     
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
