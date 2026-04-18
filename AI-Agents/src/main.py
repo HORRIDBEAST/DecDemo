@@ -17,6 +17,12 @@ from src.models.claim_models import ClaimRequest, AIAssessmentResult
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+cors_origins = [
+    origin.strip()
+    for origin in os.getenv("CORS_ORIGINS", "http://localhost:3000,http://localhost:3001").split(",")
+    if origin.strip()
+]
+
 app = FastAPI(
     title="DecentralizedClaim AI Agents",
     description="AI-powered insurance claim processing",
@@ -26,7 +32,7 @@ app = FastAPI(
 # CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
