@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "tw-animate-css";
+@import "shepherd.js/dist/css/shepherd.css";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -187,4 +188,57 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Minimal, sleek Shepherd tour theme */
+.shepherd-element.dc-shepherd {
+  max-width: 320px;
+}
+
+.dc-shepherd .shepherd-content {
+  border: 1px solid hsl(var(--border));
+  border-radius: 14px;
+  box-shadow: 0 20px 50px -20px rgb(0 0 0 / 0.25);
+  background: hsl(var(--card));
+}
+
+.dc-shepherd .shepherd-header {
+  background: transparent;
+  padding: 0.9rem 1rem 0.15rem;
+}
+
+.dc-shepherd .shepherd-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: hsl(var(--foreground));
+}
+
+.dc-shepherd .shepherd-text {
+  color: hsl(var(--muted-foreground));
+  font-size: 0.875rem;
+  line-height: 1.45;
+  padding: 0.25rem 1rem 0.9rem;
+}
+
+.dc-shepherd .shepherd-footer {
+  padding: 0 1rem 1rem;
+  gap: 0.5rem;
+}
+
+.dc-shepherd .shepherd-button {
+  border-radius: 9999px;
+  background: hsl(var(--primary));
+  color: hsl(var(--primary-foreground));
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.45rem 0.9rem;
+}
+
+.dc-shepherd .shepherd-button:hover {
+  filter: brightness(0.95);
+}
+
+.dc-shepherd .shepherd-button.shepherd-button-secondary {
+  background: hsl(var(--secondary));
+  color: hsl(var(--secondary-foreground));
 }

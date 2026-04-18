@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +17,20 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
+  const [sessionExpiryMessage, setSessionExpiryMessage] = useState('');
+
+  useEffect(() => {
+    const reason = localStorage.getItem('sessionExpiredReason');
+    if (!reason) return;
+
+    if (reason === 'inactive') {
+      setSessionExpiryMessage('Your session expired after inactivity. Please log in again.');
+    } else if (reason === 'absolute') {
+      setSessionExpiryMessage('For your security, your session expired. Please log in again.');
+    }
+
+    localStorage.removeItem('sessionExpiredReason');
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,6 +77,12 @@ export default function LoginPage() {
         </CardHeader>
 
         <CardContent>
+          {sessionExpiryMessage && (
+            <div className="mb-5 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              {sessionExpiryMessage}
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Email Input */}
             <div className="space-y-2">

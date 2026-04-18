@@ -9,6 +9,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { MessageCircle, X, Send, ArrowRight, Copy, Check, Loader2, RotateCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -19,6 +21,19 @@ interface SupportBotProps {
   onInsertText?: (text: string) => void;
   defaultOpen?: boolean;
   type?: 'floating' | 'inline';
+}
+
+function normalizeAssistantContent(content: string): string {
+  // Normalize line endings and collapse large vertical gaps.
+  let normalized = content.replace(/\r\n/g, '\n').replace(/\n\s*\n+/g, '\n\n');
+
+  // Remove blank lines between consecutive list items for tighter formatting.
+  normalized = normalized.replace(
+    /(\n\s*(?:[-*]|\d+\.)\s[^\n]*)\n(?=\s*(?:[-*]|\d+\.)\s)/g,
+    '$1'
+  );
+
+  return normalized.trim();
 }
 
 export function SupportBot({ onInsertText, defaultOpen = false, type = 'floating' }: SupportBotProps) {
@@ -213,7 +228,25 @@ export function SupportBot({ onInsertText, defaultOpen = false, type = 'floating
                         : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100'
                     )}
                   >
-                    <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    {message.role === 'assistant' ? (
+                      <div className="text-sm whitespace-pre-wrap leading-relaxed">
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={{
+                            p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                            ol: ({ children }) => <ol className="list-decimal pl-5 space-y-1 my-2">{children}</ol>,
+                            ul: ({ children }) => <ul className="list-disc pl-5 space-y-1 my-2">{children}</ul>,
+                            li: ({ children }) => <li>{children}</li>,
+                            strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            code: ({ children }) => <code className="rounded bg-gray-200 dark:bg-gray-700 px-1 py-0.5 text-xs">{children}</code>,
+                          }}
+                        >
+                          {normalizeAssistantContent(message.content)}
+                        </ReactMarkdown>
+                      </div>
+                    ) : (
+                      <p className="text-sm whitespace-pre-wrap">{message.content}</p>
+                    )}
 
                     {/* Action Buttons for Assistant Messages */}
                     {message.role === 'assistant' && message.content && (

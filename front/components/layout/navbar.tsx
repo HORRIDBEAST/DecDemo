@@ -146,7 +146,7 @@ export default function Navbar() {
               Finance News
             </Link>
             
-            <Link href="/verify" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
+            <Link href="/verify" data-tour-dashboard="verify-link" className="text-sm font-medium text-foreground/60 hover:text-primary transition-colors">
               Verify
             </Link>
             

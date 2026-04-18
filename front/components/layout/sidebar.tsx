@@ -23,7 +23,7 @@ export default function Sidebar() {
   return (
     <aside className="hidden md:flex md:w-64 md:flex-col md:fixed md:inset-y-0 md:pt-16">
       <div className="flex-1 flex flex-col min-h-0 bg-white border-r border-slate-200">
-        <nav className="flex-1 px-4 py-4 space-y-1">
+        <nav className="flex-1 px-4 py-4 space-y-1" data-tour-dashboard="sidebar-links">
           {navigation.map((item) => {
             // --- LOGIC FIX: Hide Admin Panel if user is not admin ---
             if (item.adminOnly && user?.role !== 'admin') {
@@ -37,6 +37,7 @@ export default function Sidebar() {
               <Link
                 key={item.name}
                 href={item.href}
+                data-tour-dashboard-link={item.name}
                 className={cn(
                   'group flex items-center px-4 py-3 text-sm font-medium rounded-md transition-colors',
                   isActive

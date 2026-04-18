@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { api } from '@/lib/api';
 import { ClaimStats, Claim, ClaimStatus } from '@/lib/types';
@@ -20,6 +20,87 @@ export default function DashboardPage() {
   const [notifications, setNotifications] = useState<any[]>([]);
   const [marketNews, setMarketNews] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const hasAutoStartedTour = useRef(false);
+
+  const startDashboardTour = async (isManual = false) => {
+    const TOUR_SEEN_KEY = 'dc-tour-dashboard-v1';
+    if (!isManual && localStorage.getItem(TOUR_SEEN_KEY)) return;
+
+    const Shepherd = (await import('shepherd.js')).default;
+    const tour = new Shepherd.Tour({
+      useModalOverlay: true,
+      defaultStepOptions: {
+        classes: 'dc-shepherd',
+        cancelIcon: { enabled: true },
+        scrollTo: { behavior: 'smooth', block: 'center' },
+      },
+    });
+
+    const steps = [
+      {
+        id: 'dash-home',
+        selector: '[data-tour-dashboard-link="Dashboard"]',
+        title: 'Dashboard',
+        text: 'This is your main overview for total claims, recent activity, and quick status insights.',
+      },
+      {
+        id: 'dash-my-claims',
+        selector: '[data-tour-dashboard-link="My Claims"]',
+        title: 'My Claims',
+        text: 'View all your submitted claims, track progress, and open details for each claim.',
+      },
+      {
+        id: 'dash-new-claim',
+        selector: '[data-tour-dashboard-link="New Claim"]',
+        title: 'New Claim',
+        text: 'Use this to file a new claim and upload all required documents quickly.',
+      },
+      {
+        id: 'dash-analytics',
+        selector: '[data-tour-dashboard-link="Analytics"]',
+        title: 'Analytics',
+        text: 'See claim trends, performance metrics, and insights to understand your claim patterns.',
+      },
+      {
+        id: 'dash-verify',
+        selector: '[data-tour-dashboard="verify-link"]',
+        title: 'Verify',
+        text: 'Use Verify from the top navbar for public blockchain claim verification.',
+      },
+    ].filter((step) => document.querySelector(step.selector));
+
+    if (steps.length === 0) return;
+
+    steps.forEach((step, index) => {
+      const isLast = index === steps.length - 1;
+      tour.addStep({
+        id: step.id,
+        title: step.title,
+        text: step.text,
+        attachTo: { element: step.selector, on: 'bottom' },
+        buttons: [
+          ...(index > 0
+            ? [
+                {
+                  text: 'Back',
+                  classes: 'shepherd-button-secondary',
+                  action: tour.back,
+                },
+              ]
+            : []),
+          {
+            text: isLast ? 'Done' : 'Next',
+            action: isLast ? tour.complete : tour.next,
+          },
+        ],
+      });
+    });
+
+    tour.on('complete', () => localStorage.setItem(TOUR_SEEN_KEY, '1'));
+    tour.on('cancel', () => localStorage.setItem(TOUR_SEEN_KEY, '1'));
+
+    tour.start();
+  };
 
   useEffect(() => {
     const fetchData = async () => {
@@ -55,6 +136,17 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
+  useEffect(() => {
+    if (loading || hasAutoStartedTour.current) return;
+    hasAutoStartedTour.current = true;
+
+    const timer = setTimeout(() => {
+      startDashboardTour(false);
+    }, 700);
+
+    return () => clearTimeout(timer);
+  }, [loading]);
+
   if (loading) return <DashboardSkeleton />;
 
   return (
@@ -72,11 +164,20 @@ export default function DashboardPage() {
               <p className="text-muted-foreground mt-2 text-lg">Welcome back! Here's an overview of your claims</p>
             </div>
           </div>
-          <Link href="/claims/new" className="mx-auto md:mx-0">
-            <Button size="lg" className="h-12 px-6 rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:scale-105 transition-all">
-              <Plus className="mr-2 h-5 w-5" /> File New Claim
+          <div className="mx-auto md:mx-0 flex items-center gap-2">
+            <Button
+              size="default"
+              onClick={() => startDashboardTour(true)}
+              className="rounded-full bg-purple-600 text-white hover:bg-purple-700"
+            >
+              Take Tour
             </Button>
-          </Link>
+            <Link href="/claims/new">
+              <Button size="lg" className="h-12 px-6 rounded-full shadow-xl shadow-primary/25 hover:shadow-primary/40 hover:scale-105 transition-all">
+                <Plus className="mr-2 h-5 w-5" /> File New Claim
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* --- STATS GRID --- */}
@@ -154,7 +255,7 @@ export default function DashboardPage() {
                         </div>
                         <div className="flex items-center gap-4">
                           <div className="text-right">
-                            <p className="font-semibold">${parseFloat(claim.requested_amount).toLocaleString()}</p>
+                            <p className="font-semibold">${claim.requested_amount.toLocaleString()}</p>
                             <p className="text-xs text-muted-foreground">Requested</p>
                           </div>
                           <ClaimStatusBadge status={claim.status} />
