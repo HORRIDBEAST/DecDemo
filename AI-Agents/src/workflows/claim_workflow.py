@@ -1,5 +1,5 @@
 import asyncio
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Callable, Awaitable, Optional
 from datetime import datetime
 import logging
 
@@ -36,6 +36,8 @@ class AgentState(TypedDict):
     recommended_amount: float
     confidence_score: float
     tx_hash: str
+    assessment_status: str
+    progress_callback: Optional[Callable[[str, str, str], Awaitable[None]]]
 
 
 class ClaimProcessingWorkflow:
@@ -69,49 +71,93 @@ class ClaimProcessingWorkflow:
         return workflow.compile()
 
     async def _document_analysis_node(self, state: AgentState) -> AgentState:
+        await self._emit(state, "document_analysis", "processing", "Document Analysis Agent started analyzing...")
         logger.info(f"Processing document analysis for claim {state['claim_id']}")
         report = await self.document_agent.process(state)
         state['agent_reports']['document_agent'] = report
+        await self._emit(state, "document_analysis", "complete", "Document Analysis Agent finished.")
         return state
 
     async def _damage_assessment_node(self, state: AgentState) -> AgentState:
+        await self._emit(state, "damage_assessment", "processing", "Damage Assessment Agent started analyzing...")
         logger.info(f"Processing damage assessment for claim {state['claim_id']}")
         report = await self.damage_agent.process(state)
         state['agent_reports']['damage_agent'] = report
+        await self._emit(state, "damage_assessment", "complete", "Damage Assessment Agent finished.")
         return state
 
     async def _fraud_detection_node(self, state: AgentState) -> AgentState:
+        await self._emit(state, "fraud_detection", "processing", "Fraud Detection Agent started analyzing...")
         logger.info(f"Processing fraud detection for claim {state['claim_id']}")
         report = await self.fraud_agent.process(state)
         state['agent_reports']['fraud_agent'] = report
         state['fraud_detected'] = report['findings'].get('fraud_detected', False)
         state['risk_score'] = report['findings'].get('risk_score', 0)
+        await self._emit(state, "fraud_detection", "complete", "Fraud Detection Agent finished.")
         return state
 
     async def _settlement_calculation_node(self, state: AgentState) -> AgentState:
+        await self._emit(state, "settlement_calculation", "processing", "Settlement Calculation Agent started analyzing...")
         logger.info(f"Processing settlement for claim {state['claim_id']}")
         report = await self.settlement_agent.process(state)
         state['agent_reports']['settlement_agent'] = report
         state['recommended_amount'] = report['findings'].get('recommended_amount', 0)
+        self._determine_outcome(state)
+        await self._emit(state, "settlement_calculation", "complete", "Settlement Calculation Agent finished.")
         return state
 
     async def _blockchain_update_node(self, state: AgentState) -> AgentState:
+        await self._emit(state, "blockchain_update", "processing", "Blockchain Update Agent started analyzing...")
         logger.info(f"Updating blockchain for claim {state['claim_id']}")
-        # Calculate final confidence score before sending to blockchain
-        confidences = [r['confidence'] for r in state['agent_reports'].values() if r and 'confidence' in r]
-        state['confidence_score'] = sum(confidences) / len(confidences) if confidences else 0
-        
         report = await self.blockchain_agent.process(state)
         state['agent_reports']['blockchain_agent'] = report
         state['tx_hash'] = report['findings'].get('tx_hash')
+        await self._emit(state, "blockchain_update", "complete", "Blockchain Update Agent finished.")
         return state
 
+    async def _emit(self, state: AgentState, step: str, status: str, message: str) -> None:
+        callback = state.get("progress_callback")
+        if callback:
+            await callback(step, status, message)
+
+    def _determine_outcome(self, state: AgentState) -> None:
+        """Derive a consistent final disposition from deterministic evidence."""
+        reports = state["agent_reports"]
+        fraud_findings = reports.get("fraud_agent", {}).get("findings", {})
+        document_findings = reports.get("document_agent", {}).get("findings", {})
+        risk_score = int(state.get("risk_score", 0))
+        ratio = fraud_findings.get("amount_discrepancy_ratio") or 0
+        document_mismatch = bool(document_findings.get("doc_amount_mismatch"))
+        weather_mismatch = bool(fraud_findings.get("weather_mismatch"))
+
+        confidences = [report["confidence"] for report in reports.values() if report and "confidence" in report]
+        evidence_confidence = sum(confidences) / len(confidences) if confidences else 0
+        if weather_mismatch:
+            evidence_confidence -= 0.20
+        if document_mismatch:
+            evidence_confidence -= 0.20
+        if ratio > 5.0:
+            evidence_confidence -= 0.30
+        state["confidence_score"] = max(0.0, min(1.0, evidence_confidence))
+
+        if risk_score >= 75 or fraud_findings.get("forced_fraud", False):
+            state["fraud_detected"] = True
+            state["assessment_status"] = "REJECTED_FRAUD"
+            state["recommended_amount"] = 0
+        elif risk_score >= 40 or document_mismatch or ratio > 2.0 or state["confidence_score"] < 0.80:
+            state["fraud_detected"] = False
+            state["assessment_status"] = "REQUIRES_HUMAN_REVIEW"
+        else:
+            state["fraud_detected"] = False
+            state["assessment_status"] = "PRE_APPROVED"
+
     @traceable
-    async def process_claim(self, request: dict) -> AIAssessmentResult:
+    async def process_claim(self, request: dict, progress_callback=None) -> AIAssessmentResult:
         start_time = datetime.utcnow()
         # Initialize the state dictionary with all keys from AgentState
         initial_state: AgentState = {
             "claim_id": request["claim_id"],
+            "user_id": request.get("user_id"),
             "claim_type": request["claim_type"],
             "requested_amount": request["requested_amount"],
             "description": request["description"],
@@ -124,7 +170,9 @@ class ClaimProcessingWorkflow:
             "risk_score": 0,
             "recommended_amount": 0,
             "confidence_score": 0,
-            "tx_hash": None
+            "tx_hash": None,
+            "assessment_status": "PROCESSING",
+            "progress_callback": progress_callback,
         }
 
         try:
@@ -132,7 +180,7 @@ class ClaimProcessingWorkflow:
             final_state = await self.graph.ainvoke(initial_state)
             processing_time = (datetime.utcnow() - start_time).total_seconds()
             
-            requires_human_review = final_state.get('risk_score', 0) > 70 or final_state.get('confidence_score', 1) < 0.7
+            requires_human_review = final_state.get("assessment_status") == "REQUIRES_HUMAN_REVIEW"
             
             # If fraud detected, set recommended amount to $0 to avoid confusion
             recommended_amount = final_state.get("recommended_amount", 0)
@@ -161,6 +209,7 @@ class ClaimProcessingWorkflow:
                 recommended_amount=recommended_amount,
                 fraud_detected=final_state.get("fraud_detected", False),
                 fraud_reason=fraud_reason,
+                assessment_status=final_state.get("assessment_status", "REQUIRES_HUMAN_REVIEW"),
                 requires_human_review=requires_human_review,
                 agent_reports=final_state.get("agent_reports", {}),
                 processing_time=processing_time,
@@ -176,6 +225,7 @@ class ClaimProcessingWorkflow:
                 recommended_amount=0,
                 fraud_detected=False,
                 fraud_reason=f"Processing error: {str(e)}",
+                assessment_status="REQUIRES_HUMAN_REVIEW",
                 requires_human_review=True,
                 agent_reports={},
                 processing_time=processing_time,

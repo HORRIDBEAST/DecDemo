@@ -131,10 +131,13 @@ class DamageAgent(BaseAgent):
         
         # Calculate confidence based on whether vision worked and red flags
         confidence = 0.85
-        if findings["image_analysis_performed"] and findings.get("ai_confidence", 0) > 70:
-            confidence = 0.95
-        elif findings["red_flags"]:
+        # Evidence contradictions take precedence over a confident vision model.
+        # A model can clearly identify damage while the requested amount is still
+        # inconsistent with that damage.
+        if findings["red_flags"]:
             confidence = 0.5
+        elif findings["image_analysis_performed"] and findings.get("ai_confidence", 0) > 70:
+            confidence = 0.95
         
         return self._create_agent_report(confidence, findings, processing_time)    
     def _suggest_claim_type(self, description: str) -> str:

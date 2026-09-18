@@ -9,6 +9,9 @@ contract ClaimRegistry is Ownable, ReentrancyGuard {
     uint256 private _claimIdCounter;
 
     enum ClaimStatus { SUBMITTED, PROCESSING, APPROVED, REJECTED, SETTLED }
+    // AI disposition is deliberately separate from the insurer's lifecycle.
+    // Human approval and settlement remain controlled by validators.
+    enum AIAssessmentStatus { SUBMITTED, PRE_APPROVED, REQUIRES_HUMAN_REVIEW, REJECTED_FRAUD }
     enum ClaimType { AUTO, HOME, HEALTH }
 
     struct Claim {
@@ -30,6 +33,7 @@ contract ClaimRegistry is Ownable, ReentrancyGuard {
         uint256 recommendedAmount;
         string[] agentReports;
         bool fraudDetected;
+        AIAssessmentStatus assessmentStatus;
     }
 
     // Events
@@ -104,7 +108,8 @@ contract ClaimRegistry is Ownable, ReentrancyGuard {
         uint256 _riskScore,
         uint256 _recommendedAmount,
         string[] memory _agentReports,
-        bool _fraudDetected
+        bool _fraudDetected,
+        AIAssessmentStatus _assessmentStatus
     ) external onlyAuthorizedAgent claimExists(_claimId) {
         require(claims[_claimId].status == ClaimStatus.SUBMITTED, "Invalid status");
 
@@ -113,7 +118,8 @@ contract ClaimRegistry is Ownable, ReentrancyGuard {
             riskScore: _riskScore,
             recommendedAmount: _recommendedAmount,
             agentReports: _agentReports,
-            fraudDetected: _fraudDetected
+            fraudDetected: _fraudDetected,
+            assessmentStatus: _assessmentStatus
         });
 
         claims[_claimId].aiAssessmentHash = string(abi.encodePacked("ipfs://assessment-", _claimId));
@@ -124,6 +130,30 @@ contract ClaimRegistry is Ownable, ReentrancyGuard {
             emit ClaimRejected(_claimId, "AI detected fraud", msg.sender);
         }
         emit AIAssessmentUpdated(_claimId, msg.sender, _fraudDetected);
+    }
+
+    function getAIAssessment(uint256 _claimId)
+        external
+        view
+        claimExists(_claimId)
+        returns (
+            uint256 confidenceScore,
+            uint256 riskScore,
+            uint256 recommendedAmount,
+            string[] memory agentReports,
+            bool fraudDetected,
+            AIAssessmentStatus assessmentStatus
+        )
+    {
+        AIAssessment storage assessment = aiAssessments[_claimId];
+        return (
+            assessment.confidenceScore,
+            assessment.riskScore,
+            assessment.recommendedAmount,
+            assessment.agentReports,
+            assessment.fraudDetected,
+            assessment.assessmentStatus
+        );
     }
 
     // Validator approves claim

@@ -44,6 +44,7 @@ class BlockchainAgent(BaseAgent):
                     {"name": "_recommendedAmount", "type": "uint256"},
                     {"name": "_agentReports", "type": "string[]"},
                     {"name": "_fraudDetected", "type": "bool"},
+                    {"name": "_assessmentStatus", "type": "uint8"},
                 ],
                 "name": "updateAIAssessment",
                 "outputs": [],
@@ -217,6 +218,14 @@ class BlockchainAgent(BaseAgent):
             
             logger.info(f"Updating AI assessment for claim {blockchain_claim_id}...")
             
+            assessment_status_map = {
+                "SUBMITTED": 0,
+                "PRE_APPROVED": 1,
+                "REQUIRES_HUMAN_REVIEW": 2,
+                "REJECTED_FRAUD": 3,
+            }
+            assessment_status = assessment_status_map.get(claim_data.get("assessment_status"), 2)
+
             tx_data = contract.functions.updateAIAssessment(
                 blockchain_claim_id,
                 int(claim_data.get("confidence_score", 0) * 100),
@@ -224,6 +233,7 @@ class BlockchainAgent(BaseAgent):
                 self.w3.to_wei(str(claim_data.get("recommended_amount", 0)), 'ether'),
                 agent_reports_json,
                 claim_data.get("fraud_detected", False),
+                assessment_status,
             ).build_transaction({
                 "from": self.account.address,
                 "nonce": nonce, 
