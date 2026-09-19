@@ -2,17 +2,17 @@
   "_format": "hh-sol-cache-2",
   "files": {
     "C:\\Users\\lenovo\\Documents\\Javascript OG\\DecDemo\\Block\\contracts\\ClaimRegistry.sol": {
-      "lastModificationDate": 1789491412287,
+      "lastModificationDate": 1789708624591,
       "contentHash": "fb9811637387faa3baffcb6946d42257",
       "sourceName": "contracts/ClaimRegistry.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.30",
         "settings": {
+          "evmVersion": "osaka",
           "optimizer": {
             "enabled": true,
             "runs": 200
           },
-          "evmVersion": "paris",
           "outputSelection": {
             "*": {
               "*": [
@@ -45,13 +45,13 @@
       "contentHash": "d3c790edc9ccf808a17c5a6cd13614fd",
       "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.30",
         "settings": {
+          "evmVersion": "osaka",
           "optimizer": {
             "enabled": true,
             "runs": 200
           },
-          "evmVersion": "paris",
           "outputSelection": {
             "*": {
               "*": [
@@ -83,13 +83,13 @@
       "contentHash": "190613e556d509d9e9a0ea43dc5d891d",
       "sourceName": "@openzeppelin/contracts/utils/ReentrancyGuard.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.30",
         "settings": {
+          "evmVersion": "osaka",
           "optimizer": {
             "enabled": true,
             "runs": 200
           },
-          "evmVersion": "paris",
           "outputSelection": {
             "*": {
               "*": [
@@ -119,13 +119,13 @@
       "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
       "sourceName": "@openzeppelin/contracts/utils/Context.sol",
       "solcConfig": {
-        "version": "0.8.20",
+        "version": "0.8.30",
         "settings": {
+          "evmVersion": "osaka",
           "optimizer": {
             "enabled": true,
             "runs": 200
           },
-          "evmVersion": "paris",
           "outputSelection": {
             "*": {
               "*": [

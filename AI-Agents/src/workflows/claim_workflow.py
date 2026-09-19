@@ -127,7 +127,9 @@ class ClaimProcessingWorkflow:
         document_findings = reports.get("document_agent", {}).get("findings", {})
         risk_score = int(state.get("risk_score", 0))
         ratio = fraud_findings.get("amount_discrepancy_ratio") or 0
-        document_mismatch = bool(document_findings.get("doc_amount_mismatch"))
+        document_mismatch = bool(document_findings.get("doc_amount_mismatch")) or (
+            document_findings.get("validity") == "suspicious"
+        )
         weather_mismatch = bool(fraud_findings.get("weather_mismatch"))
 
         confidences = [report["confidence"] for report in reports.values() if report and "confidence" in report]

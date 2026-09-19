@@ -69,7 +69,7 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
   const hasDocuments = claim.document_urls && claim.document_urls.length > 0;
   const hasPhotos = claim.damage_photo_urls && claim.damage_photo_urls.length > 0;
   const isReadyToSubmit = hasDocuments && hasPhotos;
-  const POLYGONSCAN_URL = `https://amoy.polygonscan.com/tx/`;
+  const EXPLORER_TX_URL = `https://testnet.monadscan.com/tx/`;
   const formatTxHash = (hash: string) => hash.startsWith('0x') ? hash : `0x${hash}`;
 
   return (
@@ -310,7 +310,7 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
             <CardHeader><CardTitle>Blockchain Record</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               <a 
-                href={`${POLYGONSCAN_URL}${formatTxHash(claim.blockchain_tx_hash)}`} 
+                href={`${EXPLORER_TX_URL}${formatTxHash(claim.blockchain_tx_hash)}`} 
                 target="_blank" 
                 rel="noopener noreferrer"
               >
@@ -321,7 +321,7 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
               
               {claim.approval_tx_hash && (
                 <a 
-                    href={`${POLYGONSCAN_URL}${formatTxHash(claim.approval_tx_hash)}`} 
+                    href={`${EXPLORER_TX_URL}${formatTxHash(claim.approval_tx_hash)}`} 
                     target="_blank" 
                     rel="noopener noreferrer"
                 >

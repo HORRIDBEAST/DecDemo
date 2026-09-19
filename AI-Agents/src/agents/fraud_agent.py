@@ -99,10 +99,22 @@ class FraudAgent(BaseAgent):
             findings["risk_score"] += len(doc_flags) * 15  # Higher weight for document issues
             findings["red_flags"].extend(doc_flags)
         
-        # Invalid evidence detection
-        if not damage_report.get("findings", {}).get("damage_detected", True):
-            findings["risk_score"] += 35
-            findings["red_flags"].append("Damage photos do not show valid evidence")
+        # Invalid evidence detection. damage_detected is False both when vision
+        # rejected the photo and when vision never ran, so gate on vision_ran.
+        vision_ran = damage_report.get("findings", {}).get("image_analysis_performed", False)
+        damage_detected = damage_report.get("findings", {}).get("damage_detected", True)
+
+        if vision_ran and not damage_detected:
+            # Vision model explicitly reviewed the photo and it does NOT match the claim
+            findings["risk_score"] += 80
+            forced_fraud = True
+            findings["red_flags"].append(
+                "CRITICAL: Vision analysis confirms photo does not match claimed damage/type"
+            )
+        elif not vision_ran:
+            # Infra failure, not a fraud signal - don't punish the user for API flakiness
+            findings["risk_score"] += 25
+            findings["red_flags"].append("Vision analysis unavailable — manual verification required")
         
         # Document type mismatch
         if not doc_report.get("findings", {}).get("document_type_matches", True):

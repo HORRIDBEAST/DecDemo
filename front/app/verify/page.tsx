@@ -161,7 +161,7 @@ export default function VerifyClaimPage() {
             
             <p className="text-gray-600 text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
               Experience <span className="text-yellow-600 font-semibold">zero-trust transparency</span>. 
-              Verify any claim's authenticity through the immutable Polygon Blockchain with instant, cryptographic proof.
+              Verify any claim's authenticity through the immutable Monad Blockchain with instant, cryptographic proof.
             </p>
           </div>
           
@@ -244,7 +244,7 @@ export default function VerifyClaimPage() {
                     Cryptographically Verified
                   </CardTitle>
                   <p className="text-green-600 text-sm font-medium ml-14">
-                    ✓ This claim has been verified on the Polygon blockchain
+                    ✓ This claim has been verified on the Monad blockchain
                   </p>
                 </div>
                 <div className="px-4 py-2 bg-green-600 text-white text-xs font-bold rounded-full shadow-lg animate-pulse">
@@ -329,7 +329,7 @@ export default function VerifyClaimPage() {
                   </div>
                   <div>
                     <p className="text-sm text-gray-900 font-bold uppercase tracking-wider">Blockchain Transaction Hash</p>
-                    <p className="text-xs text-gray-500 mt-0.5">Immutable proof on Polygon Amoy</p>
+                    <p className="text-xs text-gray-500 mt-0.5">Immutable proof on Monad Testnet</p>
                   </div>
                 </div>
                 
@@ -348,14 +348,14 @@ export default function VerifyClaimPage() {
                 </div>
 
                 <a 
-                  href={`https://amoy.polygonscan.com/tx/${formatHash(result.blockchain_tx_hash)}`}
+                  href={`https://testnet.monadscan.com/tx/${formatHash(result.blockchain_tx_hash)}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="block"
                 >
                   <Button className="w-full h-14 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 text-white font-bold rounded-2xl shadow-lg shadow-green-500/30 hover:shadow-xl hover:shadow-green-500/50 hover:scale-105 transition-all duration-300 text-base">
                     <ExternalLink className="w-5 h-5 mr-2" />
-                    View on PolygonScan
+                    View on MonadScan
                   </Button>
                 </a>
               </div>

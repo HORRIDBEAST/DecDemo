@@ -90,6 +90,11 @@ class DocumentAgent(BaseAgent):
                                     f"Document contains date {parsed_date.strftime('%Y-%m-%d')} which is >30 days before incident date {incident_date.strftime('%Y-%m-%d')}"
                                 )
                                 findings["validity"] = "suspicious"
+                            elif parsed_date > incident_date + timedelta(days=5):
+                                findings["red_flags"].append(
+                                    f"Document date {parsed_date.strftime('%Y-%m-%d')} is after the incident date {incident_date.strftime('%Y-%m-%d')}"
+                                )
+                                findings["validity"] = "suspicious"
                 
                 # --- CASE B: Type Mismatch Detection (LLM-Based) ---
                 if len(text) > 50:  # Only check if substantial text extracted

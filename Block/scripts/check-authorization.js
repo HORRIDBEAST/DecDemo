@@ -6,7 +6,7 @@ dotenv.config();
 async function main() {
   const contractAddress = process.env.CONTRACT_ADDRESS;
   const privateKey = process.env.PRIVATE_KEY;
-  const provider = new ethers.JsonRpcProvider("https://polygon-amoy.g.alchemy.com/v2/g-jcsI9Saz0GVQLJdXWeA");
+  const provider = new ethers.JsonRpcProvider(process.env.WEB3_PROVIDER_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
   const contract = new ethers.Contract(contractAddress, [{"name": "authorizedAgents", "type": "function", "inputs": [{"name": "agent", "type": "address"}], "outputs": [{"name": "", "type": "bool"}], "stateMutability": "view"}], provider);
   const isAuthorized = await contract.authorizedAgents(wallet.address);

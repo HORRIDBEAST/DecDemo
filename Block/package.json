@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "compile": "hardhat compile",
-    "deploy:amoy": "hardhat run scripts/deploy.js --network amoy",
+    "deploy:monad": "hardhat run scripts/deploy.js --network monadTestnet",
     "test": "hardhat test"
   },
   "devDependencies": {

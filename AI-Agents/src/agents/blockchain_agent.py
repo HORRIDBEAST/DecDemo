@@ -164,8 +164,8 @@ class BlockchainAgent(BaseAgent):
                 "from": self.account.address,
                 "nonce": nonce,
                 "gas": 500000,
-                "gasPrice": self.w3.to_wei("30", "gwei"),
-                "chainId": 80002
+                "gasPrice": self.w3.eth.gas_price,
+                "chainId": self.w3.eth.chain_id
             })
             
             signed_tx = self.w3.eth.account.sign_transaction(tx_data, self.private_key)
@@ -238,8 +238,8 @@ class BlockchainAgent(BaseAgent):
                 "from": self.account.address,
                 "nonce": nonce, 
                 "gas": 1500000,
-                "gasPrice": self.w3.to_wei("30", "gwei"),
-                "chainId": 80002
+                "gasPrice": self.w3.eth.gas_price,
+                "chainId": self.w3.eth.chain_id
             })
             
             signed_tx = self.w3.eth.account.sign_transaction(tx_data, self.private_key)
