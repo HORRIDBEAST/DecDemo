@@ -27,4 +27,24 @@ export default {
       chainId: 10143,
     },
   },
+  // Verification: `npx hardhat verify --network monadTestnet <address> <deployer>`
+  // publishes source to both MonadVision (Sourcify, no key) and Monadscan (Etherscan v2 key).
+  sourcify: {
+    enabled: true,
+    apiUrl: "https://sourcify-api-monad.blockvision.org",
+    browserUrl: "https://monadvision.com",
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY || process.env.POLYGONSCAN_API_KEY || "",
+    customChains: [
+      {
+        network: "monadTestnet",
+        chainId: 10143,
+        urls: {
+          apiURL: "https://api.etherscan.io/v2/api?chainid=10143",
+          browserURL: "https://testnet.monadscan.com",
+        },
+      },
+    ],
+  },
 };

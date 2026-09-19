@@ -121,7 +121,7 @@ export default function LandingPage() {
     {
       icon: Lock,
       title: "Blockchain Immutable",
-      description: "Every approval is cryptographically hashed on Polygon. Zero-trust transparency for auditors and users.",
+      description: "Every approval is cryptographically hashed on Monad. Zero-trust transparency for auditors and users.",
     },
     {
       icon: Globe,
@@ -143,7 +143,7 @@ export default function LandingPage() {
   const steps = [
     { number: "01", title: "Voice or Upload", desc: "Describe incident via voice or upload photos." },
     { number: "02", title: "AI Analysis", desc: "Agents verify docs & detect fraud patterns." },
-    { number: "03", title: "Chain Record", desc: "Decision is hashed on Polygon blockchain." },
+    { number: "03", title: "Chain Record", desc: "Decision is hashed on Monad blockchain." },
     { number: "04", title: "Instant Payout", desc: "Funds released to your wallet immediately." },
   ]
 
@@ -273,7 +273,7 @@ export default function LandingPage() {
           </h1>
 
           <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto mb-12 text-balance leading-relaxed animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-200">
-            Stop waiting weeks for a payout. Our Multi-Agent AI processes claims in minutes, verified forever on the Polygon blockchain.
+            Stop waiting weeks for a payout. Our Multi-Agent AI processes claims in minutes, verified forever on the Monad blockchain.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
@@ -327,7 +327,7 @@ export default function LandingPage() {
           </p>
           <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-80 grayscale hover:grayscale-0 transition-all duration-500">
             {/* Tech Stack Placeholders - Replace with SVGs if you have them */}
-            <span className="text-xl font-bold flex items-center gap-2"><Globe className="w-5 h-5"/> Polygon</span>
+            <span className="text-xl font-bold flex items-center gap-2"><Globe className="w-5 h-5"/> Monad</span>
             <span className="text-xl font-bold flex items-center gap-2"><Brain className="w-5 h-5"/> OpenAI</span>
             <span className="text-xl font-bold flex items-center gap-2"><Zap className="w-5 h-5"/> Vapi.ai</span>
             <span className="text-xl font-bold flex items-center gap-2"><Lock className="w-5 h-5"/> Supabase</span>
@@ -502,7 +502,7 @@ export default function LandingPage() {
                 <span className="text-xl font-bold">DecentralClaim</span>
               </div>
               <p className="text-sm text-muted-foreground">
-                Building the future of transparent, automated insurance on the Polygon network.
+                Building the future of transparent, automated insurance on the Monad network.
               </p>
             </div>
             
