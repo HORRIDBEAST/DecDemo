@@ -23,7 +23,7 @@
 | | |
 |---|---|
 | **Public repo** | <https://github.com/HORRIDBEAST/DecDemo> |
-| **Live app** | _LIVE_URL_ |
+| **Live app** | <https://dec-demo.vercel.app/> |
 | **Network** | Monad Testnet (chain ID `10143`) |
 | **Contract address** | [`0xF48A757f1187c45923e39b39c85692755A1DFF0D`](https://testnet.monadscan.com/address/0xF48A757f1187c45923e39b39c85692755A1DFF0D) (ClaimRegistry, source verified) |
 | **Deployment tx** | [`0x55c51f39…b63ce5`](https://testnet.monadscan.com/tx/0x55c51f39d1eb3d7586ed000130e3f336e9ca6b8ad2c9ad3ddd1778b50fb63ce5) |
