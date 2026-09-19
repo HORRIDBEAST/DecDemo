@@ -23,7 +23,10 @@ class DocumentAgent(BaseAgent):
             "validity": "valid",
             "red_flags": [],
             "extracted_dates": [],
-            "document_type_matches": True
+            "document_type_matches": True,
+            "extracted_amount": None,
+            "document_currency": None,
+            "doc_amount_mismatch": False,
         }
         
         incident_date_str = claim_data.get("incident_date")
@@ -59,7 +62,16 @@ class DocumentAgent(BaseAgent):
                     text = pytesseract.image_to_string(img)
 
                 findings["text_extracted"].append(text[:500])  # Store snippet
-                
+
+                # Financial consistency: prefer explicit invoice/estimate totals over
+                # incidental amounts such as an invoice number or a line-item price.
+                extracted_amount, currency = self._extract_document_amount(text)
+                if extracted_amount is not None:
+                    previous_amount = findings.get("extracted_amount")
+                    if previous_amount is None or extracted_amount > previous_amount:
+                        findings["extracted_amount"] = extracted_amount
+                        findings["document_currency"] = currency
+
                 # --- CASE A: Date Validation (Backdating Detection) ---
                 if incident_date and len(text) > 20:
                     # Extract all dates from document
@@ -76,6 +88,11 @@ class DocumentAgent(BaseAgent):
                             if parsed_date < incident_date - timedelta(days=30):
                                 findings["red_flags"].append(
                                     f"Document contains date {parsed_date.strftime('%Y-%m-%d')} which is >30 days before incident date {incident_date.strftime('%Y-%m-%d')}"
+                                )
+                                findings["validity"] = "suspicious"
+                            elif parsed_date > incident_date + timedelta(days=5):
+                                findings["red_flags"].append(
+                                    f"Document date {parsed_date.strftime('%Y-%m-%d')} is after the incident date {incident_date.strftime('%Y-%m-%d')}"
                                 )
                                 findings["validity"] = "suspicious"
                 
@@ -105,12 +122,58 @@ class DocumentAgent(BaseAgent):
                 findings["validity"] = "error"
                 findings["red_flags"].append(f"Failed to process document: {str(e)}")
 
+        # The claim form currently represents amounts in USD. Do not compare a
+        # rupee/euro document total as though it were a dollar total.
+        requested_amount = float(claim_data.get("requested_amount", 0) or 0)
+        extracted_amount = findings.get("extracted_amount")
+        if extracted_amount is not None and findings.get("document_currency") == "USD":
+            if requested_amount > extracted_amount * 1.20:
+                findings["red_flags"].append(
+                    f"CRITICAL: Requested amount (${requested_amount:,.2f}) is significantly higher "
+                    f"than document amount (${extracted_amount:,.2f})"
+                )
+                findings["doc_amount_mismatch"] = True
+                findings["validity"] = "suspicious"
+        elif extracted_amount is not None and findings.get("document_currency") not in (None, "USD"):
+            findings["red_flags"].append(
+                "Document total uses a different currency; amount comparison requires human review"
+            )
+
         processing_time = (datetime.utcnow() - start_time).total_seconds()
         
         # Lower confidence if red flags found
         confidence = 0.9 if not findings["red_flags"] else 0.5
         
         return self._create_agent_report(confidence, findings, processing_time)
+
+    def _extract_document_amount(self, text: str):
+        """Return the most credible explicit document total and its currency.
+
+        OCR is noisy, so this intentionally accepts only amounts attached to total
+        labels. It avoids treating arbitrary numbers (dates, policy IDs, etc.) as
+        a financial total.
+        """
+        total_pattern = re.compile(
+            r"(?:grand\s+total|invoice\s+total|estimate\s+total|amount\s+due|total\s+amount|total)"
+            r"\s*[:\-]?\s*(?:(US\$|USD|\$|₹|INR|Rs\.?)\s*)?([\d,]+(?:\.\d{1,2})?)",
+            re.IGNORECASE,
+        )
+        candidates = []
+        for match in total_pattern.finditer(text):
+            try:
+                amount = float(match.group(2).replace(",", ""))
+            except ValueError:
+                continue
+            marker = (match.group(1) or "").upper()
+            currency = "USD" if marker in {"US$", "USD", "$"} else "INR" if marker in {"₹", "INR", "RS."} else None
+            if amount > 0:
+                candidates.append((amount, currency))
+
+        if not candidates:
+            return None, None
+        # Multiple documents can contain subtotals; selecting the largest labelled
+        # total is conservative for the overcharge check.
+        return max(candidates, key=lambda item: item[0])
     
     async def _classify_document_type(self, text: str) -> str:
         """Use LLM to classify document type intelligently"""

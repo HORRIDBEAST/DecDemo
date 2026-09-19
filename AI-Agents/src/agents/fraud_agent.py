@@ -3,6 +3,7 @@ from .base_agent import BaseAgent
 from datetime import datetime, timedelta
 import json
 import logging
+import re
 from langchain_core.messages import SystemMessage, HumanMessage, ToolMessage
 from src.tools.weather_tool import verify_historical_weather
 from src.tools.price_tool import verify_market_price
@@ -51,6 +52,7 @@ class FraudAgent(BaseAgent):
             "reason": "",
             "tool_findings": ""
         }
+        forced_fraud = False
         
         # --- WEIGHTED RISK SCORING SYSTEM ---
         # Instead of simple thresholds, we accumulate risk points
@@ -97,21 +99,60 @@ class FraudAgent(BaseAgent):
             findings["risk_score"] += len(doc_flags) * 15  # Higher weight for document issues
             findings["red_flags"].extend(doc_flags)
         
-        # Invalid evidence detection
-        if not damage_report.get("findings", {}).get("damage_detected", True):
-            findings["risk_score"] += 35
-            findings["red_flags"].append("Damage photos do not show valid evidence")
+        # Invalid evidence detection. damage_detected is False both when vision
+        # rejected the photo and when vision never ran, so gate on vision_ran.
+        vision_ran = damage_report.get("findings", {}).get("image_analysis_performed", False)
+        damage_detected = damage_report.get("findings", {}).get("damage_detected", True)
+
+        if vision_ran and not damage_detected:
+            # Vision model explicitly reviewed the photo and it does NOT match the claim
+            findings["risk_score"] += 80
+            forced_fraud = True
+            findings["red_flags"].append(
+                "CRITICAL: Vision analysis confirms photo does not match claimed damage/type"
+            )
+        elif not vision_ran:
+            # Infra failure, not a fraud signal - don't punish the user for API flakiness
+            findings["risk_score"] += 25
+            findings["red_flags"].append("Vision analysis unavailable — manual verification required")
         
         # Document type mismatch
         if not doc_report.get("findings", {}).get("document_type_matches", True):
             findings["risk_score"] += 50  # Critical red flag
             findings["red_flags"].append("Document type does not match claim type")
+
+        # A material mismatch between independently assessed damage and the
+        # requested amount is deterministic evidence. Do not leave this decision
+        # to an LLM or to an unstructured web-search result.
+        requested_amount = float(claim_data.get("requested_amount", 0) or 0)
+        damage_estimate = float(damage_report.get("findings", {}).get("estimated_cost", 0) or 0)
+        discrepancy_ratio = requested_amount / damage_estimate if requested_amount > 0 and damage_estimate > 0 else None
+        findings["damage_estimate"] = damage_estimate or None
+        findings["amount_discrepancy_ratio"] = round(discrepancy_ratio, 2) if discrepancy_ratio else None
+
+        if discrepancy_ratio is not None:
+            if discrepancy_ratio > 10.0:
+                findings["risk_score"] += 80
+                forced_fraud = True
+                findings["red_flags"].append(
+                    f"CRITICAL: Extreme price inflation detected ({discrepancy_ratio:.1f}x higher than damage estimate)"
+                )
+            elif discrepancy_ratio > 5.0:
+                findings["risk_score"] += 55
+                findings["red_flags"].append(
+                    f"CRITICAL: Severe price inflation detected ({discrepancy_ratio:.1f}x higher than damage estimate)"
+                )
+            elif discrepancy_ratio > 1.5:
+                findings["risk_score"] += 35
+                findings["red_flags"].append(
+                    f"Material price discrepancy detected ({discrepancy_ratio:.1f}x higher than damage estimate)"
+                )
         
         # 3. MCP TOOL-ASSISTED ANALYSIS (Weather/Price Verification)
         desc = claim_data.get("description", "")
         date = claim_data.get("incident_date", "").split("T")[0] if claim_data.get("incident_date") else ""
         loc = claim_data.get("location", "Unknown")
-        amount = claim_data.get("requested_amount", 0)
+        amount = requested_amount
         
         user_content = f"""
         Analyze this insurance claim for fraud indicators:
@@ -170,6 +211,22 @@ class FraudAgent(BaseAgent):
                                     findings["red_flags"].append(f"CRITICAL: Claim mentions weather event but data shows clear conditions")
                                     logger.warning(f"⚠️ Weather contradiction detected!")
                             
+                            severe_weather_terms = ["heavy rain", "monsoon", "flood", "torrential", "downpour"]
+                            precipitation_match = re.search(r"precipitation:\s*([\d.]+)\s*mm", tool_output_lower)
+                            precipitation_mm = float(precipitation_match.group(1)) if precipitation_match else None
+                            if (
+                                any(term in desc_lower for term in severe_weather_terms)
+                                and precipitation_mm is not None
+                                and precipitation_mm < 5.0
+                            ):
+                                findings["risk_score"] += 40
+                                findings["weather_mismatch"] = True
+                                findings["red_flags"].append(
+                                    "CRITICAL: Claim alleges severe rainfall/flood, but weather logs record "
+                                    f"light precipitation ({precipitation_mm:.1f} mm)"
+                                )
+                                logger.warning("Severe-weather mismatch detected")
+
                             tool_summaries.append(f"Weather Verification: {tool_output[:80]}...")
                         
                     elif tool_name == "verify_market_price":
@@ -186,7 +243,6 @@ class FraudAgent(BaseAgent):
                         
                         # Try to extract numerical prices from search results
                         # Common patterns: ₹2,500-8,500 or $500-1500 or Rs 2500 to 8500
-                        import re
                         price_patterns = [
                             r'₹\s*([\d,]+)\s*(?:to|-)\s*₹?\s*([\d,]+)',  # ₹2,500-₹8,500
                             r'\$\s*([\d,]+)\s*(?:to|-)\s*\$?\s*([\d,]+)',  # $500-$1500
@@ -274,7 +330,8 @@ class FraudAgent(BaseAgent):
         findings["risk_score"] = min(100, findings["risk_score"])
         
         # Fraud threshold: >70 = High Risk
-        findings["fraud_detected"] = findings["risk_score"] > 70
+        findings["fraud_detected"] = forced_fraud or findings["risk_score"] >= 75
+        findings["forced_fraud"] = forced_fraud
         
         processing_time = (datetime.utcnow() - start_time).total_seconds()
         

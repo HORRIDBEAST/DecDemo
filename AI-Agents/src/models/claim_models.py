@@ -4,6 +4,7 @@ from datetime import datetime
 
 class ClaimRequest(BaseModel):
     claim_id: str
+    user_id: Optional[str] = None
     claim_type: str  # "AUTO", "HOME", "HEALTH"
     requested_amount: float
     description: str
@@ -24,6 +25,7 @@ class AIAssessmentResult(BaseModel):
     recommended_amount: float
     fraud_detected: bool
     fraud_reason: Optional[str] = None
+    assessment_status: str  # PRE_APPROVED, REQUIRES_HUMAN_REVIEW, REJECTED_FRAUD
     requires_human_review: bool
     agent_reports: dict  # {agent_name: AgentReport}
     processing_time: float  # seconds

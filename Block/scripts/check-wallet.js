@@ -8,11 +8,11 @@ async function main() {
     return;
   }
 
-  const provider = new ethers.JsonRpcProvider(`https://polygon-amoy.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`);
+  const provider = new ethers.JsonRpcProvider(process.env.WEB3_PROVIDER_URL);
   const wallet = new ethers.Wallet(privateKey, provider);
   const balance = await provider.getBalance(wallet.address);
   console.log(`Wallet address: ${wallet.address}`);
-  console.log(`Balance: ${ethers.formatEther(balance)} MATIC`);
+  console.log(`Balance: ${ethers.formatEther(balance)} MON`);
 }
 
 main().catch((error) => {

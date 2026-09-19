@@ -46,6 +46,7 @@ export interface AIAssessment {
   recommendedAmount: number;
   fraudDetected: boolean;
   fraudReason?: string;
+  assessmentStatus: 'PRE_APPROVED' | 'REQUIRES_HUMAN_REVIEW' | 'REJECTED_FRAUD';
   requiresHumanReview: boolean;
   agentReports: {
     documentAgent: AgentReport;

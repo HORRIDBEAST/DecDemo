@@ -2,7 +2,7 @@ import hardhat from "hardhat";
 const { ethers } = hardhat;
 
 async function main() {
-  const provider = new ethers.JsonRpcProvider("https://polygon-amoy.g.alchemy.com/v2/g-jcsI9Saz0GVQLJdXWeA");
+  const provider = new ethers.JsonRpcProvider(process.env.WEB3_PROVIDER_URL);
   const network = await provider.getNetwork();
   console.log(`Connected to chain ID: ${network.chainId}`);
   console.log(`Network name: ${network.name}`);

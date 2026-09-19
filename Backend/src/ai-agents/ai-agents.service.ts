@@ -5,6 +5,7 @@ import { firstValueFrom } from 'rxjs';
 
 interface ClaimProcessingRequest {
   claimId: string;
+  userId?: string;
   claimType: string;
   requestedAmount: number;
   description: string;
@@ -21,6 +22,7 @@ interface AIAssessmentResult {
   recommendedAmount: number;
   fraudDetected: boolean;
   fraudReason?: string;
+  assessmentStatus: 'PRE_APPROVED' | 'REQUIRES_HUMAN_REVIEW' | 'REJECTED_FRAUD';
   requiresHumanReview: boolean;
   agentReports: {
     documentAgent: any;
@@ -51,6 +53,7 @@ export class AiAgentsService {
       // Convert camelCase to snake_case for AI agents API
       const aiAgentsRequest = {
         claim_id: request.claimId,
+        user_id: request.userId,
         claim_type: request.claimType,
         requested_amount: request.requestedAmount,
         description: request.description,
@@ -85,6 +88,7 @@ export class AiAgentsService {
         recommendedAmount: result.recommended_amount,
         fraudDetected: result.fraud_detected,
         fraudReason: result.fraud_reason,
+        assessmentStatus: result.assessment_status,
         requiresHumanReview: result.requires_human_review,
         agentReports: {
           documentAgent: result.agent_reports.document_agent,
@@ -104,6 +108,7 @@ export class AiAgentsService {
         riskScore: 100,
         recommendedAmount: 0,
         fraudDetected: false,
+        assessmentStatus: 'REQUIRES_HUMAN_REVIEW',
         requiresHumanReview: true,
         agentReports: {
           documentAgent: { error: 'Processing failed' },

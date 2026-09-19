@@ -8,13 +8,29 @@
 [![NestJS](https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs)](https://nestjs.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
 [![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?style=for-the-badge&logo=solidity)](https://soliditylang.org/)
-[![Polygon](https://img.shields.io/badge/Polygon-Amoy-8247E5?style=for-the-badge&logo=polygon)](https://polygon.technology/)
+[![Monad](https://img.shields.io/badge/Monad-Testnet-836EF9?style=for-the-badge)](https://monad.xyz/)
 
 *Solving the "Black Box" problem of traditional insurance through Multi-Agent AI and Blockchain*
 
 [Features](#-key-features) • [Architecture](#-multi-agent-workflow) • [Tech Stack](#-tech-stack) • [Installation](#-installation--setup) • [Documentation](#-project-structure)
 
 </div>
+
+---
+
+## 🏆 Hackathon Submission (Monad Blitz Mumbai)
+
+| | |
+|---|---|
+| **Public repo** | <https://github.com/HORRIDBEAST/DecDemo> |
+| **Live app** | _LIVE_URL_ |
+| **Network** | Monad Testnet (chain ID `10143`) |
+| **Contract address** | [`0xF48A757f1187c45923e39b39c85692755A1DFF0D`](https://testnet.monadscan.com/address/0xF48A757f1187c45923e39b39c85692755A1DFF0D) (ClaimRegistry, source verified) |
+| **Deployment tx** | [`0x55c51f39…b63ce5`](https://testnet.monadscan.com/tx/0x55c51f39d1eb3d7586ed000130e3f336e9ca6b8ad2c9ad3ddd1778b50fb63ce5) |
+| **Explorer** | <https://testnet.monadscan.com> |
+| **Run it locally** | [Run It Yourself](#-run-it-yourself-from-scratch) |
+
+Every AI claim decision is written to the `ClaimRegistry` contract on Monad, so each claim gets a verifiable on-chain transaction.
 
 ---
 
@@ -37,7 +53,7 @@ Traditional insurance companies operate as "black boxes" where:
 A **Multi-Agent AI system** orchestrated by **LangGraph** that:
 - Processes claims in **30-60 seconds**
 - Provides **real-time transparency** into AI reasoning
-- Stores decisions on **Polygon blockchain** for immutability
+- Stores decisions on the **Monad blockchain** for immutability
 - Uses **external data sources** (weather, market prices) to detect fraud
 - Offers **voice-first** claim filing for accessibility
   
@@ -92,31 +108,27 @@ graph TB
     FraudDecision -->|High Risk| Reject[❌ Claim Rejected]
     FraudDecision -->|Low Risk| SettlementAgent[💰 Settlement Agent]
     
-    SettlementAgent -->|Calculate Payout| Blockchain[⛓️ Polygon Blockchain]
+    SettlementAgent -->|Calculate Payout| Blockchain[⛓️ Monad Blockchain]
     Blockchain -->|Store Decision| Approve[✅ Claim Approved]
     
     Reject --> WebSocket[📡 WebSocket Notification]
     Approve --> WebSocket
     WebSocket --> User[👤 User Receives Decision]
-
-    %% Darker Agent Colors for Better Text Visibility
-    style DocAgent fill:#1565C0,color:#ffffff,stroke:#0D47A1,stroke-width:2px
-    style DamageAgent fill:#6A1B9A,color:#ffffff,stroke:#4A148C,stroke-width:2px
-    style FraudAgent fill:#EF6C00,color:#ffffff,stroke:#E65100,stroke-width:2px
-    style SettlementAgent fill:#2E7D32,color:#ffffff,stroke:#1B5E20,stroke-width:2px
-    style Blockchain fill:#AD1457,color:#ffffff,stroke:#880E4F,stroke-width:2px
-
-    %% Improve Approved / Rejected Contrast
-    style Approve fill:#2E7D32,color:#ffffff,stroke:#1B5E20,stroke-width:2px
-    style Reject fill:#C62828,color:#ffffff,stroke:#8E0000,stroke-width:2px
-
+    
+    style DocAgent fill:#e3f2fd
+    style DamageAgent fill:#f3e5f5
+    style FraudAgent fill:#fff3e0
+    style SettlementAgent fill:#e8f5e9
+    style Blockchain fill:#fce4ec
+    style Approve fill:#c8e6c9
+    style Reject fill:#ffcdd2
 ```
 
 ### ⛓️ Blockchain Immutability Layer
 
-- **Smart Contracts:** Written in **Solidity**, deployed on **Polygon Amoy Testnet**
+- **Smart Contracts:** Written in **Solidity**, deployed on **Monad Testnet**
 - **Transparency:** Every decision (Approved/Rejected + AI reasoning) is hashed and stored on-chain
-- **Verification:** Users can verify their claim outcome on **PolygonScan**
+- **Verification:** Users can verify their claim outcome on **Monadscan**
 - **Tamper-Proof:** Cryptographic guarantees prevent post-decision manipulation
 
 ### 🗣️ Voice-First Interface (Vapi.ai)
@@ -175,69 +187,53 @@ Custom MCP servers give agents "superpowers":
 
 ```mermaid
 graph LR
-
-%% ---------- FRONTEND ----------
-subgraph Client["🖥️ Frontend (Next.js)"]
-UI[User Interface]
-Voice[🎤 Vapi.ai Voice]
-Chatbot[💬 AI Chatbot]
-end
-
-%% ---------- BACKEND ----------
-subgraph Backend["⚙️ Backend (NestJS)"]
-API[REST API]
-WS[WebSocket Gateway]
-Auth[Supabase Auth]
-end
-
-%% ---------- AI ----------
-subgraph AI["🧠 AI Service (Python/FastAPI)"]
-LG[LangGraph Orchestrator]
-Agents[Multi-Agent DAG]
-MCP[MCP Tools]
-end
-
-%% ---------- DATA ----------
-subgraph Data["💾 Data Layer"]
-DB[(Supabase PostgreSQL)]
-Storage[Supabase Storage]
-end
-
-%% ---------- BLOCKCHAIN ----------
-subgraph Blockchain["⛓️ Blockchain"]
-Contract[Solidity Smart Contract]
-Polygon[Polygon Amoy]
-end
-
-
-%% ---------- FLOWS ----------
-UI --> API
-Voice --> API
-Chatbot --> API
-API --> Auth
-API --> WS
-API --> LG
-WS --> UI
-LG --> Agents
-Agents --> MCP
-Agents --> DB
-Agents --> Storage
-Agents --> Contract
-Contract --> Polygon
-
-
-%% ---------- STYLING ----------
-classDef frontend fill:#0d47a1,color:#ffffff,stroke:#082567,stroke-width:2px
-classDef backend fill:#ef6c00,color:#ffffff,stroke:#a84300,stroke-width:2px
-classDef ai fill:#6a1b9a,color:#ffffff,stroke:#38006b,stroke-width:2px
-classDef data fill:#2e7d32,color:#ffffff,stroke:#005005,stroke-width:2px
-classDef blockchain fill:#c2185b,color:#ffffff,stroke:#7b1b36,stroke-width:2px
-
-class UI,Voice,Chatbot frontend
-class API,WS,Auth backend
-class LG,Agents,MCP ai
-class DB,Storage data
-class Contract,Polygon blockchain
+    subgraph Client ["🖥️ Frontend (Next.js)"]
+        UI[User Interface]
+        Voice[🎤 Vapi.ai Voice]
+        Chatbot[💬 AI Chatbot]
+    end
+    
+    subgraph Backend ["⚙️ Backend (NestJS)"]
+        API[REST API]
+        WS[WebSocket Gateway]
+        Auth[Supabase Auth]
+    end
+    
+    subgraph AI ["🧠 AI Service (Python/FastAPI)"]
+        LG[LangGraph Orchestrator]
+        Agents[Multi-Agent DAG]
+        MCP[MCP Tools]
+    end
+    
+    subgraph Data ["💾 Data Layer"]
+        DB[(Supabase PostgreSQL)]
+        Storage[Supabase Storage]
+    end
+    
+    subgraph Blockchain ["⛓️ Blockchain"]
+        Contract[Solidity Smart Contract]
+        Monad[Monad Testnet]
+    end
+    
+    UI --> API
+    Voice --> API
+    Chatbot --> API
+    API --> Auth
+    API --> WS
+    API --> LG
+    WS --> UI
+    LG --> Agents
+    Agents --> MCP
+    Agents --> DB
+    Agents --> Storage
+    Agents --> Contract
+    Contract --> Monad
+    
+    style Client fill:#e3f2fd
+    style Backend fill:#fff3e0
+    style AI fill:#f3e5f5
+    style Data fill:#e8f5e9
+    style Blockchain fill:#fce4ec
 ```
 
 ### Service Responsibilities
@@ -289,8 +285,8 @@ class Contract,Polygon blockchain
 |------------|---------|
 | **Solidity 0.8.20** | Smart contract language |
 | **Hardhat** | Development environment and testing |
-| **Polygon Amoy** | Layer-2 testnet for low-cost transactions |
-| **PolygonScan** | Blockchain explorer for verification |
+| **Monad Testnet** | High-throughput EVM chain (chain ID 10143) |
+| **Monadscan** | Blockchain explorer for verification |
 
 ### Database & Storage
 | Technology | Purpose |
@@ -301,206 +297,162 @@ class Contract,Polygon blockchain
 
 ---
 
-## 📦 Installation & Setup
+## 📦 Run It Yourself (from scratch)
 
-### Prerequisites
+Everything below runs locally on Windows, macOS or Linux. You will start **three services** (AI, Backend, Frontend) that talk to one **smart contract already deployed on Monad Testnet**.
 
-Ensure you have the following installed:
+### 0. Prerequisites
 
-- **Node.js** (v18 or higher)
-- **Python** (3.10 or higher)
-- **Git**
-- **Supabase Account** ([Sign up free](https://supabase.com))
+| Tool | Version | Notes |
+|------|---------|-------|
+| Node.js | 20+ (22 recommended) | Frontend, Backend, Hardhat |
+| Python | 3.10+ | AI service |
+| Tesseract OCR | any recent | Required by the Document Agent (`pytesseract`). Windows: [installer](https://github.com/UB-Mannheim/tesseract/wiki) · macOS: `brew install tesseract` · Linux: `apt install tesseract-ocr` |
+| Poppler | any recent | Required to OCR PDFs. Windows: [poppler releases](https://github.com/oschwartz10612/poppler-windows/releases) (add `bin` to PATH) · macOS: `brew install poppler` · Linux: `apt install poppler-utils` |
+| Supabase project | free tier | Database, auth and file storage ([sign up](https://supabase.com)) |
+| OpenAI API key | | LLM + vision ([get one](https://platform.openai.com/api-keys)) |
+| Tavily API key | | Market-price search ([get one](https://tavily.com)) |
+| Monad Testnet wallet | | Signs the on-chain transactions (step 5 shows how to fund one) |
 
-### Required API Keys
+> The contract in the table at the top is owned by the project's wallet. To run the app independently, deploy your **own** copy (step 5, about 2 minutes) and use your own wallet key everywhere below.
 
-1. **OpenAI API Key** → [Get it here](https://platform.openai.com/api-keys)
-2. **Tavily API Key** → [Get it here](https://tavily.com)
-3. **Vapi.ai API Key** (Optional) → [Get it here](https://vapi.ai)
-4. **Alchemy/Infura RPC URL** → [Get it here](https://www.alchemy.com/)
-
----
-
-### 1️⃣ Clone the Repository
+### 1. Clone
 
 ```bash
 git clone https://github.com/HORRIDBEAST/DecDemo.git
 cd DecDemo
 ```
 
----
+### 2. Supabase setup (one time)
 
-### 2️⃣ Backend Setup (NestJS)
+Create a Supabase project, then in the dashboard:
+
+1. **Tables:** `users`, `claims`, `notifications`, `reviews`. The backend reads and writes these by name.
+2. **Storage:** create two public buckets named exactly `Claims-Documents` and `Claims-photos`.
+3. **Project Settings → API:** copy the Project URL, the `anon` key, the `service_role` key and the JWT secret. You will paste them into the `.env` files below.
+
+### 3. Smart contract on Monad Testnet
+
+Skip this only if you already have a `CONTRACT_ADDRESS` and the wallet key that owns it.
 
 ```bash
-cd Backend
+cd Block
 npm install
-
-# Create environment file
-cp .env.example .env
 ```
 
-**Edit `Backend/.env`:**
+Create `Block/.env`:
 
 ```env
-SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-AI_SERVICE_URL=http://localhost:8000
-PORT=3001
+PRIVATE_KEY=0x...
+WEB3_PROVIDER_URL=https://testnet-rpc.monad.xyz
 ```
 
-**Start the server:**
+1. **Get testnet MON:** open <https://faucet.monad.xyz>, paste the wallet address for your `PRIVATE_KEY`, and claim.
+2. **Check the balance:** `npx hardhat run scripts/check-wallet.js --network monadTestnet`
+3. **Deploy:** `npm run deploy:monad` prints `ClaimRegistry deployed to: 0x...`. The script also authorizes the deployer as an AI agent, so no extra role setup is needed.
+4. **Keep the printed address.** You will use it as `CONTRACT_ADDRESS` in steps 4 and 5.
+5. **Verify the source (optional):** `npx hardhat verify --network monadTestnet <contract> <deployer-address>`. It may print a `chainid` warning while still succeeding, so check the explorer.
 
-```bash
-npm run start:dev
-```
+Network details: Chain ID `10143` · RPC `https://testnet-rpc.monad.xyz` · Explorer <https://testnet.monadscan.com> · Currency MON. The contract compiles with Solidity 0.8.30 for the `osaka` EVM.
 
-Backend will run on `http://localhost:3001`
-
----
-
-### 3️⃣ AI Service Setup (Python/FastAPI)
+### 4. AI service (Python / FastAPI, port 8000)
 
 ```bash
 cd AI-Agents
 python -m venv venv
-
-# Activate virtual environment
-# On Windows:
-venv\Scripts\activate
-# On macOS/Linux:
-source venv/bin/activate
-
+venv\Scripts\activate          # Windows
+# source venv/bin/activate     # macOS / Linux
 pip install -r requirements.txt
-
-# Create environment file
-cp .env.example .env
+cp .env.example .env           # Windows: copy .env.example .env
 ```
 
-**Edit `AI-Agents/.env`:**
+Fill in `AI-Agents/.env`:
 
 ```env
 OPENAI_API_KEY=sk-...
 TAVILY_API_KEY=tvly-...
 SUPABASE_URL=https://your-project.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-WEB3_PROVIDER_URL=https://polygon-amoy.g.alchemy.com/v2/YOUR_KEY
-CONTRACT_ADDRESS=0x...
-PRIVATE_KEY=0x...
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+WEB3_PROVIDER_URL=https://testnet-rpc.monad.xyz
+CONTRACT_ADDRESS=0x...         # from step 3
+PRIVATE_KEY=0x...              # the wallet that deployed CONTRACT_ADDRESS
 ```
 
-**Start the AI service:**
+Start it:
 
 ```bash
 uvicorn src.main:app --reload --port 8000
 ```
 
-AI service will run on `http://localhost:8000`
+Check: <http://localhost:8000/health> returns `{"status":"healthy",...}`.
 
----
+### 5. Backend (NestJS, port 3001)
 
-### 4️⃣ Frontend Setup (Next.js)
+```bash
+cd Backend
+npm install
+```
+
+Create `Backend/.env`:
+
+```env
+PORT=3001
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=eyJ...
+SUPABASE_JWT_SECRET=your_jwt_secret
+AI_AGENTS_URL=http://localhost:8000
+WEB3_PROVIDER_URL=https://testnet-rpc.monad.xyz
+CONTRACT_ADDRESS=0x...         # from step 3
+PRIVATE_KEY=0x...              # same wallet as the AI service
+TAVILY_API_KEY=tvly-...
+CORS_ORIGINS=http://localhost:3000
+```
+
+```bash
+npm run start:dev
+```
+
+### 6. Frontend (Next.js, port 3000)
 
 ```bash
 cd front
 npm install
-
-# Create environment file
-cp .env.example .env.local
 ```
 
-**Edit `front/.env.local`:**
+Create `front/.env.local`:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-OPENAI_API_KEY=sk-...
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
-NEXT_PUBLIC_VAPI_PUBLIC_KEY=your_vapi_key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
+NEXT_PUBLIC_API_URL=http://localhost:3001
+OPENAI_API_KEY=sk-...                      # chatbot
+NEXT_PUBLIC_VAPI_PUBLIC_KEY=               # optional: voice claim filing
+NEXT_PUBLIC_VAPI_ASSISTANT_ID=             # optional: voice claim filing
 ```
-
-**Start the development server:**
 
 ```bash
 npm run dev
 ```
 
-Frontend will run on `http://localhost:3000`
+### 7. Try it
 
----
+1. Open <http://localhost:3000> and **sign up** with an email and password.
+2. Go to **New Claim**, fill in the type, amount, date, location and description, and **upload a document and a damage photo**.
+3. Submit the claim for AI processing and watch the agents' live log stream.
+4. When it finishes, open the claim and click **AI Assessment** to see your transaction on [testnet.monadscan.com](https://testnet.monadscan.com).
+5. You can also paste that transaction hash into the **/verify** page.
 
-### 5️⃣ Blockchain Setup (Polygon Amoy)
+**What to expect:** a claim from a brand-new user with a consistent document and photo should come back `PRE_APPROVED`. Mismatched amounts, dates, document types or weather come back `REQUIRES_HUMAN_REVIEW`, and a photo that clearly does not match the claim comes back `REJECTED_FRAUD`.
 
-```bash
-cd Block
-npm install
+### Troubleshooting
 
-# Create environment file
-cp .env.example .env
-```
-
-**Edit `Block/.env`:**
-
-```env
-PRIVATE_KEY=0x...
-ALCHEMY_API_KEY=your_alchemy_key
-POLYGONSCAN_API_KEY=your_polygonscan_key
-```
-
-**Deploy smart contract:**
-
-```bash
-npx hardhat compile
-npx hardhat run scripts/deploy.js --network amoy
-```
-
-Copy the deployed contract address to `AI-Agents/.env` and `Backend/.env`
-
----
-
-## 🔑 Environment Variables Reference
-
-### Frontend (`front/.env.local`)
-
-```env
-NEXT_PUBLIC_SUPABASE_URL=https://xyz.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJ...
-OPENAI_API_KEY=sk-...
-NEXT_PUBLIC_BACKEND_URL=http://localhost:3001
-NEXT_PUBLIC_VAPI_PUBLIC_KEY=abc123
-```
-
-### Backend (`Backend/.env`)
-
-```env
-SUPABASE_URL=https://xyz.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-AI_SERVICE_URL=http://localhost:8000
-PORT=3001
-CONTRACT_ADDRESS=0x...
-WEB3_PROVIDER_URL=https://polygon-amoy.g.alchemy.com/v2/...
-```
-
-### AI Service (`AI-Agents/.env`)
-
-```env
-OPENAI_API_KEY=sk-...
-TAVILY_API_KEY=tvly-...
-SUPABASE_URL=https://xyz.supabase.co
-SUPABASE_SERVICE_ROLE_KEY=eyJ...
-WEB3_PROVIDER_URL=https://polygon-amoy.g.alchemy.com/v2/...
-CONTRACT_ADDRESS=0x...
-PRIVATE_KEY=0x...
-OPENWEATHER_API_KEY=abc123
-```
-
-### Blockchain (`Block/.env`)
-
-```env
-PRIVATE_KEY=0x...
-ALCHEMY_API_KEY=...
-POLYGONSCAN_API_KEY=...
-```
+| Symptom | Fix |
+|---------|-----|
+| `Blockchain connection failed` in the AI logs | Check `WEB3_PROVIDER_URL=https://testnet-rpc.monad.xyz` |
+| `Not authorized agent` or `OwnableUnauthorizedAccount` | `PRIVATE_KEY` must be the wallet that deployed `CONTRACT_ADDRESS` |
+| `insufficient funds` | Claim more MON at the faucet |
+| PDF documents fail OCR | Install Poppler and make sure it is on your PATH |
+| Frontend shows network errors | The backend must be on port 3001 and `CORS_ORIGINS` must include `http://localhost:3000` |
 
 ---
 
@@ -614,7 +566,7 @@ DecentralizedClaim/
 ```
 📄 Document Agent detected:
 ❌ Chronological inconsistency: Invoice dated 10 days before accident
-🚫 Claim REJECTED: Invalid documentation
+🚩 Claim flagged for HUMAN REVIEW: Invalid documentation
 ```
 
 ---
@@ -679,9 +631,9 @@ event ClaimRecorded(
 );
 ```
 
-**Verify on PolygonScan:**
+**Verify on Monadscan:**
 ```
-https://amoy.polygonscan.com/tx/0x...
+https://testnet.monadscan.com/tx/0x...
 ```
 
 ---
@@ -741,7 +693,7 @@ python -m black src/           # Format code
 npx hardhat compile             # Compile contracts
 npx hardhat test                # Run tests
 npx hardhat node                # Start local node
-npx hardhat run scripts/deploy.js --network amoy
+npx hardhat run scripts/deploy.js --network monadTestnet
 ```
 
 ---
@@ -753,7 +705,7 @@ npx hardhat run scripts/deploy.js --network amoy
 | Average Claim Processing Time | **45 seconds** |
 | AI Accuracy (Fraud Detection) | **94.2%** |
 | False Positive Rate | **<5%** |
-| Blockchain Tx Confirmation | **2-5 seconds** (Polygon) |
+| Blockchain Tx Confirmation | **~1 second** (Monad, 400 ms blocks) |
 | WebSocket Latency | **<100ms** |
 
 ---
@@ -829,7 +781,7 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
 
 - **OpenAI** - GPT-4o and Vision API
 - **LangChain/LangGraph** - Multi-agent orchestration
-- **Polygon** - Layer-2 blockchain infrastructure
+- **Monad** - High-performance EVM blockchain
 - **Supabase** - Backend-as-a-Service
 - **Vapi.ai** - Voice interface technology
 - **Shadcn/ui** - Beautiful component library

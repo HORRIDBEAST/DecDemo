@@ -5,12 +5,12 @@ import * as crc32 from 'crc-32'; // <-- Import the library
 // ABI for ClaimRegistry contract (simplified)
 const CLAIM_REGISTRY_ABI = [
   "function submitClaim(uint256 _claimId, address _claimant, uint8 _claimType, uint256 _requestedAmount, string memory _ipfsHash) external returns (uint256)",  // ✅ UPDATED
-  "function updateAIAssessment(uint256 _claimId, uint256 _confidenceScore, uint256 _riskScore, uint256 _recommendedAmount, string[] memory _agentReports, bool _fraudDetected) external",
+  "function updateAIAssessment(uint256 _claimId, uint256 _confidenceScore, uint256 _riskScore, uint256 _recommendedAmount, string[] memory _agentReports, bool _fraudDetected, uint8 _assessmentStatus) external",
   "function approveClaim(uint256 _claimId, uint256 _approvedAmount) external",
   "function rejectClaim(uint256 _claimId, string memory _reason) external",
   "function settleClaim(uint256 _claimId) external payable",
   "function getClaim(uint256 _claimId) external view returns (uint256, address, uint8, uint8, uint256, uint256, string memory, uint256, bool)",
-  "function getAIAssessment(uint256 _claimId) external view returns (uint256, uint256, uint256, string[] memory, bool)",
+  "function getAIAssessment(uint256 _claimId) external view returns (uint256, uint256, uint256, string[] memory, bool, uint8)",
   "event ClaimSubmitted(uint256 indexed claimId, address indexed claimant, uint8 claimType, uint256 requestedAmount)",
   "event ClaimStatusUpdated(uint256 indexed claimId, uint8 status, address indexed updatedBy)",
   "event ClaimApproved(uint256 indexed claimId, uint256 approvedAmount, address indexed approvedBy)",
@@ -118,6 +118,7 @@ async submitAndRecordClaim(claimId: string, claimData: any, aiResult: any): Prom
         JSON.stringify(aiResult.agentReports.settlementAgent),
       ],
       aiResult.fraudDetected,
+      this.getAssessmentStatusCode(aiResult.assessmentStatus),
       // `ipfs://assessment-${claimId}-${Date.now()}`
     );
 
@@ -153,6 +154,7 @@ async submitAndRecordClaim(claimId: string, claimData: any, aiResult: any): Prom
           JSON.stringify(aiResult.agentReports.settlementAgent),
         ],
         aiResult.fraudDetected,
+        this.getAssessmentStatusCode(aiResult.assessmentStatus),
         // `ipfs://assessment-${claimId}-${Date.now()}`
       );
 
@@ -298,6 +300,16 @@ async submitAndRecordClaim(claimId: string, claimData: any, aiResult: any): Prom
       this.logger.error(`Failed to get claim from blockchain:`, error);
       throw error;
     }
+  }
+
+  private getAssessmentStatusCode(status?: string): number {
+    const mapping: Record<string, number> = {
+      SUBMITTED: 0,
+      PRE_APPROVED: 1,
+      REQUIRES_HUMAN_REVIEW: 2,
+      REJECTED_FRAUD: 3,
+    };
+    return mapping[status || 'REQUIRES_HUMAN_REVIEW'] ?? 2;
   }
 
  private getBlockchainClaimId(claimIdStr: string): number {

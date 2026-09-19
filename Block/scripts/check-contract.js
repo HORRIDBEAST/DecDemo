@@ -8,7 +8,7 @@ async function main() {
     return;
   }
 
-  const provider = new ethers.JsonRpcProvider("https://polygon-amoy.g.alchemy.com/v2/g-jcsI9Saz0GVQLJdXWeA");
+  const provider = new ethers.JsonRpcProvider(process.env.WEB3_PROVIDER_URL);
   const code = await provider.getCode(contractAddress);
   if (code === "0x") {
     console.error("Contract address is invalid or not deployed");

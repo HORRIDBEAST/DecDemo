@@ -376,6 +376,7 @@ export class ClaimsService {
       this.logger.log(`[Claim ${claimId}] Calling AI agents service...`);
       const aiResult = await this.aiAgentsService.processClaim({
         claimId,
+        userId: claimData.user_id,
         claimType: claimData.type,
         requestedAmount: claimData.requested_amount,
         description: claimData.description,
@@ -464,9 +465,11 @@ export class ClaimsService {
   private async updateClaimWithAIResult(claimId: string, aiResult: any) {
     const supabase = this.supabaseService.getAdminClient();
     
-    const newStatus = (aiResult.fraudDetected || aiResult.requiresHumanReview)
-      ? ClaimStatus.HUMAN_REVIEW
-      : ClaimStatus.AI_REVIEW;
+    const newStatus = aiResult.assessmentStatus === 'REJECTED_FRAUD'
+      ? ClaimStatus.REJECTED
+      : aiResult.assessmentStatus === 'REQUIRES_HUMAN_REVIEW'
+        ? ClaimStatus.HUMAN_REVIEW
+        : ClaimStatus.AI_REVIEW;
 
     this.logger.log(`[Claim ${claimId}] Updating with status ${newStatus}`);
 

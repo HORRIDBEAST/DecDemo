@@ -6,6 +6,7 @@ import logging
 import os
 import json
 import asyncio
+from collections import deque
 from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()
@@ -44,6 +45,18 @@ claim_workflow = ClaimProcessingWorkflow()
 # ✅ Prevent duplicate processing - track claims being processed
 processing_claims: set = set()
 processing_lock = asyncio.Lock()
+claim_log_buffers: dict[str, deque] = {}
+claim_log_complete: set[str] = set()
+claim_log_lock = asyncio.Lock()
+
+async def append_claim_log(claim_id: str, step: str, status: str, message: str) -> None:
+    """Store POST-generated workflow events for read-only SSE clients."""
+    async with claim_log_lock:
+        claim_log_buffers.setdefault(claim_id, deque(maxlen=100)).append({
+            "step": step,
+            "status": status,
+            "message": message,
+        })
 
 @app.get("/")
 async def root():
@@ -66,14 +79,27 @@ async def process_claim(request: ClaimRequest):
                 detail=f"Claim {request.claim_id} is already being processed. Please wait."
             )
         processing_claims.add(request.claim_id)
+        async with claim_log_lock:
+            claim_log_buffers[request.claim_id] = deque(maxlen=100)
+            claim_log_complete.discard(request.claim_id)
+
+    async def emit_progress(step: str, status: str, message: str) -> None:
+        await append_claim_log(request.claim_id, step, status, message)
     
     try:
-        result = await claim_workflow.process_claim(request.dict())
+        await emit_progress("initialization", "processing", "Claim processing started.")
+        result = await claim_workflow.process_claim(request.dict(), progress_callback=emit_progress)
+        await emit_progress("complete", "done", "All agents finished.")
         return result
+    except Exception as error:
+        await emit_progress("error", "done", f"Processing stopped: {str(error)}")
+        raise
     finally:
         # ✅ Remove from processing set when done
         async with processing_lock:
             processing_claims.discard(request.claim_id)
+        async with claim_log_lock:
+            claim_log_complete.add(request.claim_id)
             logger.info(f"✅ Claim {request.claim_id} processing completed and unlocked")
 
 @app.get("/claims/{claim_id}/stream-logs")
@@ -82,6 +108,26 @@ async def stream_agent_logs(claim_id: str):
     Streams real-time 'thinking' logs.
     """
     async def event_generator():
+        # This endpoint is read-only: it replays events emitted by POST and
+        # never calls the workflow or any agent.
+        index = 0
+        while True:
+            async with claim_log_lock:
+                events = list(claim_log_buffers.get(claim_id, []))
+                complete = claim_id in claim_log_complete
+
+            while index < len(events):
+                yield f"data: {json.dumps(events[index])}\n\n"
+                index += 1
+
+            if complete:
+                return
+            if not events:
+                yield f"data: {json.dumps({'step': 'waiting', 'message': 'No active processing run found.', 'status': 'done'})}\n\n"
+                return
+            await asyncio.sleep(0.25)
+
+        # Legacy code below is intentionally unreachable and will be removed.
         # ✅ FIX: Initialize with COMPLETE AgentState structure to avoid KeyError
         dummy_request = {
             "claim_id": claim_id,
@@ -103,7 +149,7 @@ async def stream_agent_logs(claim_id: str):
         
         try:
             # Use astream_events to get granular updates
-            async for event in claim_workflow.graph.astream_events(dummy_request, version="v1"):
+            for event in []:  # obsolete path; SSE never executes a workflow
                 kind = event["event"]
                 name = event["name"]
                 

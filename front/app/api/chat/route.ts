@@ -11,7 +11,7 @@ const KNOWLEDGE_BASE = {
     **Project Name:** DecentralizedClaim
     **Creator:** Rajas Deshpande
     **Core Mission:** Solve the "Black Box" problem of traditional insurance by combining Multi-Agent AI with Blockchain transparency.
-    **Key Innovation:** Automates claim processing in <2 minutes using autonomous AI agents while creating an immutable audit trail on the Polygon blockchain.
+    **Key Innovation:** Automates claim processing in <2 minutes using autonomous AI agents while creating an immutable audit trail on the Monad blockchain.
   `,
 
   techStack: `
@@ -19,7 +19,7 @@ const KNOWLEDGE_BASE = {
     - **Frontend:** Next.js 14 (App Router), Tailwind CSS, Shadcn UI, Vapi.ai (Voice Interface)
     - **Backend:** NestJS (Microservices), Supabase (Database & Auth), Socket.io (Real-time Websockets)
     - **AI Agents:** Python (FastAPI), LangGraph (Orchestration), OpenAI GPT-4o, OpenCV (Computer Vision)
-    - **Blockchain:** Solidity (Smart Contracts), Polygon Amoy (Testnet), PolygonScan (Explorer), Ethers.js
+    - **Blockchain:** Solidity (Smart Contracts), Monad Testnet, Monadscan (Explorer), Ethers.js
     - **External APIs:** Tavily (Market Search), OpenWeatherMap (Weather Verification)
   `,
 
@@ -36,7 +36,7 @@ const KNOWLEDGE_BASE = {
        - Users see granular updates like "Checking Weather..." or "Analyzing Photo...".
 
     3. **Immutable Trust Layer:**
-       - Every AI decision (Approved/Rejected + Reason) is hashed and stored on **Polygon Amoy**.
+       - Every AI decision (Approved/Rejected + Reason) is hashed and stored on **Monad Testnet**.
        - Smart Contract Language: **Solidity**.
   `,
 
