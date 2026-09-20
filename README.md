@@ -7,30 +7,30 @@
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
 [![NestJS](https://img.shields.io/badge/NestJS-10-E0234E?style=for-the-badge&logo=nestjs)](https://nestjs.com/)
 [![Python](https://img.shields.io/badge/Python-3.10+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://python.org/)
-[![Solidity](https://img.shields.io/badge/Solidity-0.8.20-363636?style=for-the-badge&logo=solidity)](https://soliditylang.org/)
+[![Solidity](https://img.shields.io/badge/Solidity-0.8.30-363636?style=for-the-badge&logo=solidity)](https://soliditylang.org/)
 [![Monad](https://img.shields.io/badge/Monad-Testnet-836EF9?style=for-the-badge)](https://monad.xyz/)
 
 *Solving the "Black Box" problem of traditional insurance through Multi-Agent AI and Blockchain*
 
-[Features](#-key-features) • [Architecture](#-multi-agent-workflow) • [Tech Stack](#-tech-stack) • [Installation](#-installation--setup) • [Documentation](#-project-structure)
+[Features](#-key-features) • [Architecture](#-multi-agent-workflow) • [Tech Stack](#-tech-stack) • [Run It Yourself](#-run-it-yourself-from-scratch) • [Documentation](#-project-structure)
 
 </div>
 
 ---
 
-## 🏆 Hackathon Submission (Monad Blitz Mumbai)
+## 🌐 Live Demo & Deployment
 
 | | |
 |---|---|
-| **Public repo** | <https://github.com/HORRIDBEAST/DecDemo> |
-| **Live app** | _LIVE_URL_ |
+| **Repository** | <https://github.com/HORRIDBEAST/DecDemo> |
+| **Live app** | <https://dec-demo.vercel.app/> |
 | **Network** | Monad Testnet (chain ID `10143`) |
 | **Contract address** | [`0xF48A757f1187c45923e39b39c85692755A1DFF0D`](https://testnet.monadscan.com/address/0xF48A757f1187c45923e39b39c85692755A1DFF0D) (ClaimRegistry, source verified) |
-| **Deployment tx** | [`0x55c51f39…b63ce5`](https://testnet.monadscan.com/tx/0x55c51f39d1eb3d7586ed000130e3f336e9ca6b8ad2c9ad3ddd1778b50fb63ce5) |
+| **Contract deployment tx** | [`0x55c51f39…b63ce5`](https://testnet.monadscan.com/tx/0x55c51f39d1eb3d7586ed000130e3f336e9ca6b8ad2c9ad3ddd1778b50fb63ce5) |
 | **Explorer** | <https://testnet.monadscan.com> |
 | **Run it locally** | [Run It Yourself](#-run-it-yourself-from-scratch) |
 
-Every AI claim decision is written to the `ClaimRegistry` contract on Monad, so each claim gets a verifiable on-chain transaction.
+Every AI claim decision is written to the `ClaimRegistry` contract on Monad Testnet, so each claim gets a verifiable on-chain transaction.
 
 ---
 
@@ -283,7 +283,7 @@ graph LR
 ### Blockchain
 | Technology | Purpose |
 |------------|---------|
-| **Solidity 0.8.20** | Smart contract language |
+| **Solidity 0.8.30** | Smart contract language |
 | **Hardhat** | Development environment and testing |
 | **Monad Testnet** | High-throughput EVM chain (chain ID 10143) |
 | **Monadscan** | Blockchain explorer for verification |
@@ -312,9 +312,9 @@ Everything below runs locally on Windows, macOS or Linux. You will start **three
 | Supabase project | free tier | Database, auth and file storage ([sign up](https://supabase.com)) |
 | OpenAI API key | | LLM + vision ([get one](https://platform.openai.com/api-keys)) |
 | Tavily API key | | Market-price search ([get one](https://tavily.com)) |
-| Monad Testnet wallet | | Signs the on-chain transactions (step 5 shows how to fund one) |
+| Monad Testnet wallet | | Signs the on-chain transactions (step 3 shows how to fund one) |
 
-> The contract in the table at the top is owned by the project's wallet. To run the app independently, deploy your **own** copy (step 5, about 2 minutes) and use your own wallet key everywhere below.
+> The contract in the table at the top is owned by the project's wallet. To run the app independently, deploy your **own** copy (step 3, about 2 minutes) and use your own wallet key everywhere below.
 
 ### 1. Clone
 
