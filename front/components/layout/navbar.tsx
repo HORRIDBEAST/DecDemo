@@ -11,12 +11,24 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { LogOut, User, Settings, Bell, Shield, Menu, X } from 'lucide-react';
+import { LogOut, User, Settings, Bell, Shield, Menu, X, Home, FileText, Plus, BarChart3 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 import { FeedbackModal } from './feedback-modal';
+
+// Mirrors the desktop Sidebar's links (components/layout/sidebar.tsx), which is
+// hidden below the md breakpoint and has no other mobile equivalent.
+const mainNavigation = [
+  { name: 'Dashboard', href: '/dashboard', icon: Home },
+  { name: 'My Claims', href: '/claims', icon: FileText },
+  { name: 'New Claim', href: '/claims/new', icon: Plus },
+  { name: 'Analytics', href: '/analytics', icon: BarChart3 },
+  { name: 'Admin Panel', href: '/admin', icon: Shield, adminOnly: true },
+];
 
 function NotificationBell() {
   const { user, loading } = useAuth();
@@ -125,6 +137,7 @@ function NotificationBell() {
 export default function Navbar() {
   const { user, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
@@ -206,9 +219,32 @@ export default function Navbar() {
 
       {/* Mobile Nav */}
       {isMobileMenuOpen && (
-        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-6 space-y-4 animate-in slide-in-from-top-5">
-          <Link 
-            href="/finance" 
+        <div className="md:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-6 space-y-4 animate-in slide-in-from-top-5 max-h-[calc(100vh-4rem)] overflow-y-auto">
+          {/* Main navigation - the desktop Sidebar is hidden here, so this is the only way in on mobile */}
+          <div className="space-y-1 pb-3 border-b border-border">
+            {mainNavigation.map((item) => {
+              if (item.adminOnly && user?.role !== 'admin') return null;
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className={cn(
+                    'flex items-center gap-3 px-2 py-2.5 rounded-md text-sm font-medium transition-colors',
+                    isActive ? 'bg-blue-50 text-blue-600' : 'text-foreground/80 hover:bg-muted'
+                  )}
+                >
+                  <Icon className="w-4 h-4" />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+
+          <Link
+            href="/finance"
             className="block text-sm font-medium text-foreground/80 hover:text-primary py-2 transition-colors"
             onClick={() => setIsMobileMenuOpen(false)}
           >

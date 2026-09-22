@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">ClaimLens</string>
+    <string name="title_activity_main">ClaimLens</string>
+    <string name="package_name">com.claimlens.app</string>
+    <string name="custom_url_scheme">com.claimlens.app</string>
+</resources>

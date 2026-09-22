@@ -200,7 +200,19 @@ export function ClaimDetails({ claim, onClaimUpdate }: ClaimDetailsProps) {
           <AiThinkingLogs claimId={claim.id} onComplete={handleAiComplete} />
         )}
 
-        {claim.ai_assessment && (
+        {claim.ai_assessment?.processingFailed && (
+          <Card>
+            <CardHeader><CardTitle>AI Assessment</CardTitle></CardHeader>
+            <CardContent>
+              <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+                <p className="font-semibold">AI processing did not complete</p>
+                <p className="mt-1">{claim.ai_assessment.fraudReason}</p>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {claim.ai_assessment && !claim.ai_assessment.processingFailed && (
           <Card>
             <CardHeader><CardTitle>AI Assessment</CardTitle></CardHeader>
             <CardContent className="space-y-4">

@@ -32,6 +32,8 @@ interface AIAssessmentResult {
   };
   processingTime: number;
   metadata: any;
+  // True when the AI service could not be reached; the scores are placeholders, not a verdict.
+  processingFailed?: boolean;
 }
 
 @Injectable()
@@ -44,6 +46,40 @@ export class AiAgentsService {
     private readonly configService: ConfigService,
   ) {
     this.aiAgentsUrl = this.configService.get<string>('AI_AGENTS_URL', 'http://127.0.0.1:8000');
+  }
+
+  // Free-tier hosts spin the AI service down when idle. The first request then gets a 429/502/503
+  // from the platform proxy while the service boots (~45s on Render), so wait and retry instead of
+  // failing the claim. Only connect-phase errors and gateway statuses are retried: a read timeout
+  // could mean the claim is still being processed, and retrying it would run it twice.
+  private readonly retryDelaysMs = [3000, 5000, 8000, 12000, 15000, 20000, 25000];
+  private readonly retryableStatuses = new Set([429, 502, 503]);
+  private readonly retryableCodes = new Set(['ECONNREFUSED', 'ECONNRESET', 'ENOTFOUND', 'EAI_AGAIN']);
+
+  private isServiceWakingUp(error: any): boolean {
+    const status = error?.response?.status;
+    if (status) return this.retryableStatuses.has(status);
+    return this.retryableCodes.has(error?.code);
+  }
+
+  private async postWithWakeRetry(url: string, body: unknown) {
+    for (let attempt = 0; ; attempt++) {
+      try {
+        return await firstValueFrom(
+          this.httpService.post(url, body, {
+            timeout: 300000,
+            headers: { 'Content-Type': 'application/json' },
+          }),
+        );
+      } catch (error) {
+        if (!this.isServiceWakingUp(error) || attempt >= this.retryDelaysMs.length) throw error;
+        const delay = this.retryDelaysMs[attempt];
+        this.logger.warn(
+          `AI service not ready (${error.response?.status ?? error.code}); retry ${attempt + 1}/${this.retryDelaysMs.length} in ${delay / 1000}s`,
+        );
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
   }
 
   async processClaim(request: ClaimProcessingRequest): Promise<AIAssessmentResult> {
@@ -65,14 +101,7 @@ export class AiAgentsService {
 
       this.logger.log(`Sending request to AI agents: ${JSON.stringify(aiAgentsRequest)}`);
 
-      const response = await firstValueFrom(
-        this.httpService.post(`${this.aiAgentsUrl}/process-claim`, aiAgentsRequest, {
-          timeout: 300000,
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        })
-      );
+      const response = await this.postWithWakeRetry(`${this.aiAgentsUrl}/process-claim`, aiAgentsRequest);
 
       const result = response.data;
       
@@ -105,9 +134,11 @@ export class AiAgentsService {
       return {
         claimId: request.claimId,
         confidenceScore: 0,
-        riskScore: 100,
+        riskScore: 0,
         recommendedAmount: 0,
         fraudDetected: false,
+        fraudReason: 'The AI service was unavailable, so this claim was not assessed. Please re-submit it.',
+        processingFailed: true,
         assessmentStatus: 'REQUIRES_HUMAN_REVIEW',
         requiresHumanReview: true,
         agentReports: {
