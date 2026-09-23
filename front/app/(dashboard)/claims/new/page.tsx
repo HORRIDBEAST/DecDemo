@@ -18,6 +18,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Loader2, FileText, DollarSign, Calendar, MapPin, Mic, Sparkles, ArrowRight, X } from 'lucide-react';
 import { VoiceClaimAssistant } from '@/components/claims/voice-assistant';
 import { ClaimDraftingAssistant } from '@/components/claims/claim-drafting-assistant';
+import { getCurrentLocationAddress } from '@/lib/geolocation';
 
 // 1. Define the form schema
 const claimFormSchema = z.object({
@@ -40,6 +41,7 @@ export default function NewClaimPage() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showDraftingBot, setShowDraftingBot] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(claimFormSchema),
@@ -81,6 +83,21 @@ export default function NewClaimPage() {
     form.trigger();
     toast.success('Form filled by AI! Please review and upload documents.');
   };
+
+  async function useCurrentLocation() {
+    setIsLocating(true);
+    try {
+      const { address, wasFallback } = await getCurrentLocationAddress();
+      form.setValue('location', address, { shouldValidate: true });
+      if (wasFallback) {
+        toast.warning("Couldn't resolve an address - filled in raw coordinates instead. Please edit to add a place name.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message?.includes('denied') ? 'Location permission denied.' : 'Could not get your location.');
+    } finally {
+      setIsLocating(false);
+    }
+  }
 
   // 2. Define the submit handler
   async function onSubmit(data: ClaimFormValues) {
@@ -246,13 +263,25 @@ export default function NewClaimPage() {
                           <MapPin className="h-4 w-4" />
                           Incident Location
                         </FormLabel>
-                        <FormControl>
-                          <Input 
-                            placeholder="123 Main St, Springfield" 
-                            className="h-11 border-border/50 hover:border-primary/50 transition-colors"
-                            {...field} 
-                          />
-                        </FormControl>
+                        <div className="flex gap-2">
+                          <FormControl>
+                            <Input
+                              placeholder="123 Main St, Springfield"
+                              className="h-11 border-border/50 hover:border-primary/50 transition-colors"
+                              {...field}
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="h-11 w-11 shrink-0"
+                            disabled={isLocating}
+                            onClick={useCurrentLocation}
+                          >
+                            {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                          </Button>
+                        </div>
                         <FormMessage />
                       </FormItem>
                     )}

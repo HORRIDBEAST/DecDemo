@@ -5,6 +5,7 @@ import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
 import { Toaster } from 'sonner';
 import { SupportBot } from '@/components/layout/support-bot';
+import { NativeInit } from '@/components/layout/native-init';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <AuthProvider>
+          <NativeInit />
           {children}
           <SupportBot />
           <Toaster position="top-right" richColors />
