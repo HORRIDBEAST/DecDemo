@@ -1,6 +1,14 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Required by @capacitor/camera and @capacitor/geolocation. Neither plugin
+         declares these itself; both are requested at runtime via Capacitor's
+         permission APIs, but Android refuses to grant a permission the app
+         never declared here, regardless of what the JS side asks for. -->
+    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
+
     <application
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
@@ -15,7 +23,8 @@
             android:label="@string/title_activity_main"
             android:theme="@style/AppTheme.NoActionBarLaunch"
             android:launchMode="singleTask"
-            android:exported="true">
+            android:exported="true"
+            android:windowOptOutEdgeToEdgeEnforcement="true">
 
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

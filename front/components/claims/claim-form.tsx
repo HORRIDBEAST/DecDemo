@@ -14,7 +14,27 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Loader2 } from 'lucide-react';
+import { Loader2, MapPin } from 'lucide-react';
+import { Capacitor } from '@capacitor/core';
+import { Geolocation } from '@capacitor/geolocation';
+
+// The backend's weather-fraud check geocodes this field as a place name
+// (AI-Agents/src/agents/fraud_agent.py -> verify_historical_weather), so raw
+// "lat, lng" would silently break that check. Reverse-geocode first, and only
+// fall back to coordinates - with a warning - if that lookup fails.
+async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  try {
+    const res = await fetch(
+      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`,
+      { headers: { Accept: 'application/json' } },
+    );
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.display_name ?? null;
+  } catch {
+    return null;
+  }
+}
 
 // Schema WITHOUT transformation - keep everything as strings in the form
 const claimFormSchema = z.object({
@@ -56,6 +76,7 @@ function usePersistForm(key: string, form: any) {
 export function ClaimForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
 
   const form = useForm<ClaimFormValues>({
     resolver: zodResolver(claimFormSchema),
@@ -69,6 +90,44 @@ export function ClaimForm() {
   });
 
   usePersistForm('claim-draft', form);
+
+  async function useCurrentLocation() {
+    setIsLocating(true);
+    try {
+      let lat: number, lng: number;
+
+      if (Capacitor.isNativePlatform()) {
+        const pos = await Geolocation.getCurrentPosition();
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      } else {
+        if (!navigator.geolocation) {
+          toast.error('Location is not available on this browser.');
+          return;
+        }
+        const pos = await new Promise<GeolocationPosition>((resolve, reject) =>
+          navigator.geolocation.getCurrentPosition(resolve, reject, { timeout: 10000 }),
+        );
+        lat = pos.coords.latitude;
+        lng = pos.coords.longitude;
+      }
+
+      const address = await reverseGeocode(lat, lng);
+      if (address) {
+        form.setValue('location', address, { shouldValidate: true });
+      } else {
+        // Fraud-check geocoding will likely fail on this, but it's better than
+        // leaving the field empty - the red flag it produces is honest, not silent.
+        form.setValue('location', `${lat.toFixed(5)}, ${lng.toFixed(5)}`, { shouldValidate: true });
+        toast.warning("Couldn't resolve an address - filled in raw coordinates instead. Please edit to add a place name.");
+      }
+    } catch (error: any) {
+      toast.error(error?.message?.includes('denied') ? 'Location permission denied.' : 'Could not get your location.');
+    } finally {
+      setIsLocating(false);
+    }
+  }
+
   // Convert string to number manually before sending to API
   async function onSubmit(data: ClaimFormValues) {
     setIsSubmitting(true);
@@ -160,9 +219,14 @@ export function ClaimForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Incident Location</FormLabel>
-              <FormControl>
-                <Input placeholder="123 Main St, Springfield" {...field} />
-              </FormControl>
+              <div className="flex gap-2">
+                <FormControl>
+                  <Input placeholder="123 Main St, Springfield" {...field} />
+                </FormControl>
+                <Button type="button" variant="outline" size="icon" disabled={isLocating} onClick={useCurrentLocation}>
+                  {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />}
+                </Button>
+              </div>
               <FormMessage />
             </FormItem>
           )}

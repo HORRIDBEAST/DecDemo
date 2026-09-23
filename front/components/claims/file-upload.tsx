@@ -5,8 +5,18 @@ import { useState } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { api } from '@/lib/api';
 import { toast } from 'sonner';
-import { Upload, FileText, ImageIcon, Loader2, CheckCircle, AlertTriangle } from 'lucide-react';
+import { Upload, FileText, ImageIcon, Loader2, CheckCircle, AlertTriangle, Camera as CameraIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Capacitor } from '@capacitor/core';
+import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+
+// Turns a Capacitor Camera data URL into the same File type the web dropzone
+// produces, so both paths feed the one upload function below unchanged.
+async function dataUrlToFile(dataUrl: string, fileName: string): Promise<File> {
+  const res = await fetch(dataUrl);
+  const blob = await res.blob();
+  return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
+}
 
 interface FileUploadProps {
   claimId: string;
@@ -23,10 +33,28 @@ export function FileUpload({ claimId, type, onUploadSuccess, existingFiles }: Fi
     onDrop: (acceptedFiles) => {
       setFiles(prev => [...prev, ...acceptedFiles]);
     },
-    accept: type === 'documents' 
-      ? { 'application/pdf': ['.pdf'] } 
+    accept: type === 'documents'
+      ? { 'application/pdf': ['.pdf'] }
       : { 'image/*': ['.jpeg', '.jpg', '.png'] },
   });
+
+  const handleCameraCapture = async () => {
+    try {
+      const photo = await Camera.getPhoto({
+        resultType: CameraResultType.DataUrl,
+        source: CameraSource.Camera,
+        quality: 85,
+      });
+      if (!photo.dataUrl) return;
+      const file = await dataUrlToFile(photo.dataUrl, `photo_${Date.now()}.jpeg`);
+      setFiles((prev) => [...prev, file]);
+    } catch (error: any) {
+      // User cancelling the camera also lands here (message contains "cancelled") - not an error.
+      if (!String(error?.message).toLowerCase().includes('cancel')) {
+        toast.error('Could not open the camera.');
+      }
+    }
+  };
 
   const handleUpload = async () => {
     if (files.length === 0) {
@@ -70,6 +98,13 @@ export function FileUpload({ claimId, type, onUploadSuccess, existingFiles }: Fi
           {type === 'documents' ? 'PDF files only' : 'Images only (JPG, PNG)'}
         </p>
       </div>
+
+      {type === 'photos' && Capacitor.isNativePlatform() && (
+        <Button type="button" variant="outline" className="w-full" onClick={handleCameraCapture}>
+          <CameraIcon className="mr-2 h-4 w-4" />
+          Take Photo
+        </Button>
+      )}
 
       {files.length > 0 && (
         <div className="space-y-2">
