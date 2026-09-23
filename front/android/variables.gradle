@@ -1,7 +1,13 @@
 ext {
     minSdkVersion = 23
     compileSdkVersion = 35
-    targetSdkVersion = 35
+    // Android 15's forced edge-to-edge layout (status bar/camera-cutout overlap) only
+    // applies to apps that TARGET API 35+. Neither the manifest opt-out flag nor the
+    // StatusBar plugin's setOverlaysWebView(false) reliably suppressed it on this
+    // device's MIUI/HyperOS build, so targeting 34 avoids the enforcement outright.
+    // compileSdkVersion stays 35 - that only affects which APIs are available to
+    // compile against, not this runtime behavior.
+    targetSdkVersion = 34
     androidxActivityVersion = '1.9.2'
     androidxAppCompatVersion = '1.7.0'
     androidxCoordinatorLayoutVersion = '1.2.0'
