@@ -6,12 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, ShieldCheck, ExternalLink, Loader2, AlertCircle, Sparkles, Lock, CheckCircle2, Copy } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { useAuth } from '@/context/auth-context';
-import Link from 'next/link';
 import { toast } from 'sonner';
+import { PublicNavbar } from '@/components/layout/public-navbar';
 
 export default function VerifyClaimPage() {
-  const { user, loading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
@@ -98,44 +96,7 @@ export default function VerifyClaimPage() {
         <div className="absolute inset-0 bg-[linear-gradient(rgba(0,0,0,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(0,0,0,0.02)_1px,transparent_1px)] bg-[size:64px_64px]" />
       </div>
 
-      {/* Clean Navbar */}
-      <nav className="sticky top-0 z-50 backdrop-blur-xl bg-white/80 border-b border-gray-200/60 shadow-sm">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-2 rounded-xl group-hover:shadow-md transition-all duration-300 border border-green-100">
-                <ShieldCheck className="w-6 h-6 text-green-600" />
-              </div>
-              <span className="text-xl font-bold tracking-tight text-gray-900 hover:text-green-600 transition-colors">
-                DecentralizedClaim
-              </span>
-            </Link>
-            <div className="flex items-center gap-6">
-              <Link href="/finance" className="text-sm font-medium text-gray-600 hover:text-yellow-600 transition-colors">
-                Finance News
-              </Link>
-              <Link href="/help" className="text-sm font-medium text-gray-600 hover:text-yellow-600 transition-colors">
-                Help Center
-              </Link>
-              <Link href="/reviews" className="text-sm font-medium text-gray-600 hover:text-yellow-600 transition-colors">
-                Reviews
-              </Link>
-              
-              {!loading && (
-                user ? (
-                  <Button asChild className="rounded-full bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-500 hover:to-emerald-500 shadow-lg shadow-green-500/20 hover:shadow-green-500/40 transition-all duration-300">
-                  <Link href="/dashboard">Go to Dashboard</Link>
-                </Button>
-                ) : (
-                   <Button asChild variant="outline" className="rounded-full border-gray-300 hover:border-green-500 hover:text-green-600">
-                  <Link href="/login">Login</Link>
-                </Button>
-                )
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <PublicNavbar />
 
       {/* Main Content */}
       <div className="relative z-10 max-w-4xl mx-auto py-20 px-4 space-y-12">

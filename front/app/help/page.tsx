@@ -1,15 +1,15 @@
 'use client';
 
-import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/context/auth-context';
-import { Mail, PlayCircle, FileText, Shield, HelpCircle, BookOpen, Video, Send, Sparkles, Loader2 } from 'lucide-react';
+import { Mail, PlayCircle, FileText, HelpCircle, BookOpen, Video, Send, Sparkles, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useState } from 'react';
+import { PublicNavbar } from '@/components/layout/public-navbar';
 
 export default function HelpPage() {
   const { user } = useAuth();
@@ -51,43 +51,8 @@ export default function HelpPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20">
-      {/* Modern Navbar */}
-      <nav className="sticky top-0 z-50 backdrop-blur-md bg-background/80 border-b border-border transition-all duration-300">
-        <div className="w-full px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center gap-2 group">
-              <div className="bg-primary/10 p-2 rounded-lg group-hover:bg-primary/20 transition-colors">
-                <Shield className="w-6 h-6 text-primary" />
-              </div>
-              <span className="text-xl font-bold tracking-tight hover:text-primary transition-colors">
-                DecentralizedClaim
-              </span>
-            </Link>
-            
-            <div className="flex items-center gap-6">
-              <Link href="/finance" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                Finance News
-              </Link>
-              <Link href="/verify" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                Verify
-              </Link>
-              <Link href="/reviews" className="text-sm font-medium text-muted-foreground hover:text-primary transition-colors">
-                Reviews
-              </Link>
-              {user ? (
-                <Button asChild className="rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40">
-                  <Link href="/dashboard">Go to Dashboard</Link>
-                </Button>
-              ) : (
-                <Button asChild variant="outline" className="rounded-full">
-                  <Link href="/login">Login</Link>
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-gradient-to-b from-background via-background to-muted/20 overflow-x-hidden">
+      <PublicNavbar />
 
       {/* Hero Section */}
       <section className="relative overflow-hidden pt-20 pb-16 bg-gradient-to-br from-primary/10 via-background to-purple-500/10">
