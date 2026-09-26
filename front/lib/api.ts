@@ -18,6 +18,35 @@ const getHeaders = () => {
   return headers;
 };
 
+// The Render free-tier backend spins down after ~15 min idle. The first request
+// after that gets a 429/502/503 from Render's own proxy (or the connection fails
+// outright) before the app has even booted, which the fetch API surfaces as a
+// generic "TypeError: Failed to fetch" - this is exactly what caused login to
+// silently fail to redirect earlier, and the same thing breaks file uploads,
+// claim submission, or any other call unlucky enough to be first after idle.
+// Mirrors the identical wake-retry pattern already shipped in
+// Backend/src/ai-agents/ai-agents.service.ts for backend -> AI-agents calls -
+// this covers the frontend -> backend leg, which had no such protection.
+const WAKE_RETRY_DELAYS_MS = [3000, 5000, 8000, 12000, 15000, 20000, 25000];
+const WAKE_RETRY_STATUSES = new Set([429, 502, 503]);
+
+async function fetchWithWakeRetry(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      const res = await fetch(input, init);
+      if (!WAKE_RETRY_STATUSES.has(res.status) || attempt >= WAKE_RETRY_DELAYS_MS.length) {
+        return res;
+      }
+      // Falls through to the retry delay below only for a retryable status.
+    } catch (error) {
+      // A thrown error here means the request never got a response at all
+      // (connection refused/reset) - the backend is most likely still waking up.
+      if (attempt >= WAKE_RETRY_DELAYS_MS.length) throw error;
+    }
+    await new Promise((resolve) => setTimeout(resolve, WAKE_RETRY_DELAYS_MS[attempt]));
+  }
+}
+
 // A helper function to handle API responses and errors
 // lib/api.ts
 
@@ -43,7 +72,7 @@ async function handleResponse<T>(response: Response): Promise<T> {
 export const api = {
   // === Auth ===
   login: async (supabaseToken: string): Promise<{ user: User }> => {
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ token: supabaseToken }),
@@ -51,7 +80,7 @@ export const api = {
     return handleResponse(res);
   },
 getAdminClaims: async (): Promise<Claim[]> => {
-    const res = await fetch(`${API_URL}/claims/admin/pending`, { 
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/admin/pending`, { 
       headers: getHeaders() // ✅ FIX: Use getHeaders() instead of manual localStorage
     });
     if (!res.ok) throw new Error('Failed to fetch admin claims');
@@ -59,7 +88,7 @@ getAdminClaims: async (): Promise<Claim[]> => {
   },
   getNotifications: async (): Promise<any[]> => {
     try {
-      const res = await fetch(`${API_URL}/users/notifications`, {
+      const res = await fetchWithWakeRetry(`${API_URL}/users/notifications`, {
         headers: getHeaders()
       });
       
@@ -93,14 +122,14 @@ getAdminClaims: async (): Promise<Claim[]> => {
     }
   },
   verify: async (): Promise<{ user: User }> => {
-    const res = await fetch(`${API_URL}/auth/verify`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/auth/verify`, {
       method: 'POST',
       headers: getHeaders(),
     });
     return handleResponse(res);
   },
   updateClaim: async (id: string, data: any): Promise<Claim> => {
-    const res = await fetch(`${API_URL}/claims/${id}`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/${id}`, {
       method: 'PATCH',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -109,7 +138,7 @@ getAdminClaims: async (): Promise<Claim[]> => {
   },
   // Add to api object
   createReview: async (data: { rating: number; comment: string; claimId?: string }) => {
-    const res = await fetch(`${API_URL}/users/reviews`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/users/reviews`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -120,20 +149,20 @@ getAdminClaims: async (): Promise<Claim[]> => {
   // ... existing methods
   getReviews: async (): Promise<any[]> => {
     // This endpoint needs to be public in your backend
-    const res = await fetch(`${API_URL}/users/reviews/public`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/users/reviews/public`, {
       headers: { 'Content-Type': 'application/json' } // No Auth header needed for public route
     });
     return handleResponse(res);
   },
 
   getMyReviews: async (): Promise<any[]> => {
-    const res = await fetch(`${API_URL}/users/my-reviews`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/users/my-reviews`, {
       headers: getHeaders()
     });
     return handleResponse(res);
   },
 markNotificationRead: async (id: string) => {
-    const res = await fetch(`${API_URL}/users/notifications/${id}/read`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/users/notifications/${id}/read`, {
       method: 'PATCH',
       headers: getHeaders(),
     });
@@ -141,12 +170,12 @@ markNotificationRead: async (id: string) => {
   },
   // === User ===
   getProfile: async (): Promise<User> => {
-    const res = await fetch(`${API_URL}/users/me`, { headers: getHeaders() });
+    const res = await fetchWithWakeRetry(`${API_URL}/users/me`, { headers: getHeaders() });
     return handleResponse(res);
   },
 
   updateProfile: async (data: { displayName?: string; walletAddress?: string }): Promise<User> => {
-    const res = await fetch(`${API_URL}/users/me`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/users/me`, {
       method: 'PATCH',
       headers: getHeaders(),
       body: JSON.stringify(data),
@@ -156,23 +185,23 @@ markNotificationRead: async (id: string) => {
 
   // === Claims (Get) ===
   getClaimStats: async (): Promise<ClaimStats> => {
-    const res = await fetch(`${API_URL}/claims/stats`, { headers: getHeaders() });
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/stats`, { headers: getHeaders() });
     return handleResponse(res);
   },
   
   getClaims: async (page = 1, limit = 10): Promise<PaginatedResponse<Claim>> => {
-    const res = await fetch(`${API_URL}/claims?page=${page}&limit=${limit}`, { headers: getHeaders() });
+    const res = await fetchWithWakeRetry(`${API_URL}/claims?page=${page}&limit=${limit}`, { headers: getHeaders() });
     return handleResponse(res);
   },
 
   getClaimById: async (id: string): Promise<Claim> => {
-    const res = await fetch(`${API_URL}/claims/${id}`, { headers: getHeaders() });
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/${id}`, { headers: getHeaders() });
     return handleResponse(res);
   },
 
   // === Claims (Mutate) ===
   createClaim: async (draft: Omit<CreateClaimDTO, 'documentUrls' | 'damagePhotoUrls'>): Promise<Claim> => {
-    const res = await fetch(`${API_URL}/claims`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/claims`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify(draft),
@@ -181,7 +210,7 @@ markNotificationRead: async (id: string) => {
   },
   
   submitClaimForProcessing: async (id: string): Promise<Claim> => {
-    const res = await fetch(`${API_URL}/claims/${id}/submit`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/${id}/submit`, {
       method: 'POST',
       headers: getHeaders(),
     });
@@ -194,7 +223,7 @@ markNotificationRead: async (id: string) => {
       formData.append(type, file);
     });
 
-    const res = await fetch(`${API_URL}/claims/${claimId}/${type}`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/${claimId}/${type}`, {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${authToken}`, // No 'Content-Type', browser sets it for FormData
@@ -206,7 +235,7 @@ markNotificationRead: async (id: string) => {
 
   // === Admin ===
   approveClaim: async (id: string, approvedAmount: number): Promise<Claim> => {
-    const res = await fetch(`${API_URL}/claims/${id}/approve`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/${id}/approve`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ approvedAmount }),
@@ -215,7 +244,7 @@ markNotificationRead: async (id: string) => {
   },
   
   rejectClaim: async (id: string, reason: string): Promise<Claim> => {
-    const res = await fetch(`${API_URL}/claims/${id}/reject`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/claims/${id}/reject`, {
       method: 'POST',
       headers: getHeaders(),
       body: JSON.stringify({ reason }),
@@ -225,7 +254,7 @@ markNotificationRead: async (id: string) => {
   
   // ✅ Add this
   getFinanceNews: async (query: string): Promise<any[]> => {
-    const res = await fetch(`${API_URL}/finance/news?query=${encodeURIComponent(query)}`, {
+    const res = await fetchWithWakeRetry(`${API_URL}/finance/news?query=${encodeURIComponent(query)}`, {
       headers: { 'Content-Type': 'application/json' }
     });
     return handleResponse(res);
