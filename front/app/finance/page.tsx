@@ -135,7 +135,10 @@ export default function FinancePage() {
         
         {/* Main Tabs */}
         <Tabs defaultValue="markets" value={activeTab} onValueChange={handleTabChange} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 mb-6 bg-transparent">
+            {/* h-auto overrides TabsList's default fixed h-9 (components/ui/tabs.tsx),
+                which is sized for a single row and clips/overlaps content below it
+                once grid-cols-2 wraps these 4 tabs onto two rows on a phone. */}
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-4 gap-2 mb-6 bg-transparent h-auto">
                 {CATEGORIES.map(cat => {
                     const Icon = cat.icon;
                     return (
