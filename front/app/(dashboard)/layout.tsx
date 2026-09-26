@@ -35,7 +35,11 @@ export default function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    // overflow-x-hidden guards every page in this layout against the same class of
+    // bug fixed on reviews/finance/verify/help: one child rendering wider than the
+    // viewport making the whole page horizontally scrollable. Individual pages
+    // shouldn't need horizontal scroll, so clipping it here is a safe default.
+    <div className="min-h-screen bg-slate-50 overflow-x-hidden">
       <Navbar />
       <div className="flex">
         <Sidebar />

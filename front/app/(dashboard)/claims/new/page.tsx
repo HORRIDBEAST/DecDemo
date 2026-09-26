@@ -295,7 +295,10 @@ export default function NewClaimPage() {
                     name="description"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-2">
+                        {/* flex-wrap: icon + label + "AI Help" button don't all fit one line on a
+                            narrow phone; without this the row forced the whole page into
+                            horizontal scroll instead of just dropping the button to its own line. */}
+                        <FormLabel className="text-sm font-semibold uppercase tracking-wide text-muted-foreground flex items-center flex-wrap gap-2">
                           <FileText className="h-4 w-4" />
                           Detailed Description
                           <Button
