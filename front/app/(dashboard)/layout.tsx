@@ -43,7 +43,15 @@ export default function DashboardLayout({
       <Navbar />
       <div className="flex">
         <Sidebar />
-        <main className="flex-1 p-6 md:ml-64">{children}</main>
+        {/* min-w-0: <main> is a flex item (flex-1), and flex items default to
+            min-width: auto - a hard floor at their content's natural minimum
+            width that flex-basis/flex-shrink cannot override. Without this,
+            any unwrappable content anywhere inside <main>, on any page, can
+            force the entire page wider than the viewport, which is what was
+            actually causing /claims/new's overflow (confirmed on-device: every
+            element inside its content area measured the same width, meaning
+            the container itself refused to shrink - not any one row). */}
+        <main className="flex-1 min-w-0 p-6 md:ml-64">{children}</main>
       </div>
       <Footer />
     </div>
