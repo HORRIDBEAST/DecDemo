@@ -9,6 +9,7 @@ import { Upload, FileText, ImageIcon, Loader2, CheckCircle, AlertTriangle, Camer
 import { Button } from '@/components/ui/button';
 import { Capacitor } from '@capacitor/core';
 import { Camera, CameraResultType, CameraSource } from '@capacitor/camera';
+import { checkPhotoQuality } from '@/lib/photo-quality';
 
 // Turns a Capacitor Camera data URL into the same File type the web dropzone
 // produces, so both paths feed the one upload function below unchanged.
@@ -48,10 +49,29 @@ export function FileUpload({ claimId, type, onUploadSuccess, existingFiles }: Fi
   const [files, setFiles] = useState<File[]>([]);
   const [isUploading, setIsUploading] = useState(false);
 
+  // Runs the blur/darkness pre-check for photo uploads only (not documents), and
+  // only adds the file to the upload list if it passes - otherwise it just warns
+  // and drops it, which is the "retake photo" prompt: nothing more elaborate than
+  // that is needed for a simple client-side quality gate.
+  const addFileIfQualityOk = async (file: File) => {
+    if (type !== 'photos') {
+      setFiles((prev) => [...prev, file]);
+      return;
+    }
+    const result = await checkPhotoQuality(file);
+    if (!result.ok) {
+      toast.warning(result.reason ?? 'Photo quality check failed. Please retake it.');
+      return;
+    }
+    setFiles((prev) => [...prev, file]);
+  };
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: async (acceptedFiles) => {
       const stableFiles = await Promise.all(acceptedFiles.map(toStableFile));
-      setFiles(prev => [...prev, ...stableFiles]);
+      for (const file of stableFiles) {
+        await addFileIfQualityOk(file);
+      }
     },
     accept: type === 'documents'
       ? { 'application/pdf': ['.pdf'] }
@@ -67,7 +87,7 @@ export function FileUpload({ claimId, type, onUploadSuccess, existingFiles }: Fi
       });
       if (!photo.dataUrl) return;
       const file = await dataUrlToFile(photo.dataUrl, `photo_${Date.now()}.jpeg`);
-      setFiles((prev) => [...prev, file]);
+      await addFileIfQualityOk(file);
     } catch (error: any) {
       // User cancelling the camera also lands here (message contains "cancelled") - not an error.
       if (!String(error?.message).toLowerCase().includes('cancel')) {
