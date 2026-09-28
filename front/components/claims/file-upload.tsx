@@ -18,6 +18,25 @@ async function dataUrlToFile(dataUrl: string, fileName: string): Promise<File> {
   return new File([blob], fileName, { type: blob.type || 'image/jpeg' });
 }
 
+// Files picked via a cloud-backed source (e.g. Google Drive through Android's
+// Storage Access Framework) aren't stable local files - they're a live reference
+// that Chromium re-validates right before upload. If the provider returns
+// different metadata between selection and upload, Chromium aborts the request
+// with net::ERR_UPLOAD_FILE_CHANGED, which surfaces to JS as an opaque network
+// error indistinguishable from a real connectivity failure. Reading the file into
+// memory immediately on selection and rebuilding a plain in-memory File from that
+// removes the live reference entirely, so there's nothing left to change later.
+async function toStableFile(file: File): Promise<File> {
+  try {
+    const buffer = await file.arrayBuffer();
+    return new File([buffer], file.name, { type: file.type, lastModified: file.lastModified });
+  } catch {
+    // If even reading it fails, fall back to the original - the upload will
+    // surface whatever the real problem is instead of silently losing the file.
+    return file;
+  }
+}
+
 interface FileUploadProps {
   claimId: string;
   type: 'documents' | 'photos';
@@ -30,8 +49,9 @@ export function FileUpload({ claimId, type, onUploadSuccess, existingFiles }: Fi
   const [isUploading, setIsUploading] = useState(false);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop: (acceptedFiles) => {
-      setFiles(prev => [...prev, ...acceptedFiles]);
+    onDrop: async (acceptedFiles) => {
+      const stableFiles = await Promise.all(acceptedFiles.map(toStableFile));
+      setFiles(prev => [...prev, ...stableFiles]);
     },
     accept: type === 'documents'
       ? { 'application/pdf': ['.pdf'] }

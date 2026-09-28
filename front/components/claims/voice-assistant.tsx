@@ -125,7 +125,11 @@ export function VoiceClaimAssistant({ onFormFill }: VoiceAssistantProps) {
     <Button
       type="button"
       variant={isCallActive ? "destructive" : "outline"}
-      className={`w-full h-16 text-lg transition-all ${isCallActive ? 'animate-pulse border-red-400' : ''}`}
+      // flex-wrap overrides the shared Button component's baked-in `whitespace-nowrap` /
+      // unwrapped inline-flex, which otherwise refuses to let this row (icon + two-line
+      // label + trailing icon) wrap on a narrow phone - one likely contributor to the
+      // whole /claims/new page being forced wider than the viewport.
+      className={`w-full h-16 text-lg transition-all flex-wrap ${isCallActive ? 'animate-pulse border-red-400' : ''}`}
       onClick={toggleCall}
     >
       {isCallActive ? (
