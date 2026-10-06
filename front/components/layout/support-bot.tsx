@@ -83,6 +83,15 @@ export function SupportBot({ onInsertText, defaultOpen = false, type = 'floating
 
       const data = await response.json();
 
+      // The API route returns { error } (not { content }) on failure - e.g. an
+      // invalid/misconfigured OPENAI_API_KEY for this environment. Without this
+      // check, `data.content` is undefined and normalizeAssistantContent(undefined)
+      // below throws (.replace on undefined) inside React's render, which crashed
+      // the whole WebView on Android instead of just failing this one message.
+      if (!response.ok || data.error) {
+        throw new Error(data.error || `Request failed (${response.status})`);
+      }
+
       // Handle navigation action
       if (data.action === 'navigate' && data.path) {
         toast.success(`Navigating to ${data.path}`);
@@ -127,8 +136,13 @@ export function SupportBot({ onInsertText, defaultOpen = false, type = 'floating
   const isDraftingMode = pathname?.includes('/claims/new') || pathname?.includes('/create-claim');
 
   // ✅ Dynamic CSS based on type
+  // Below sm (640px) - most phones, including the Capacitor WebView - right-6
+  // alone with a fixed w-[400px] pushes the panel's left edge off-screen, since
+  // 400px is wider than the viewport itself. left-6 + w-auto on mobile stretches
+  // it between both margins instead; sm: restores the original fixed-width
+  // desktop behavior unchanged.
   const cardClasses = type === 'floating'
-    ? 'fixed bottom-6 right-6 w-[400px] h-[600px] shadow-2xl z-50'
+    ? 'fixed bottom-6 right-6 left-6 w-auto h-[70vh] max-h-[600px] sm:left-auto sm:w-[400px] sm:h-[600px] shadow-2xl z-50'
     : 'w-full h-[500px] shadow-xl';
 
   return (
