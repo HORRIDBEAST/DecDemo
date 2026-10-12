@@ -538,9 +538,9 @@ export default function LandingPage() {
               © 2025 DecentralizedClaim. All rights reserved.
             </p>
             <div className="flex gap-6">
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Github className="w-5 h-5"/></a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Twitter className="w-5 h-5"/></a>
-              <a href="#" className="text-muted-foreground hover:text-primary transition-colors"><Linkedin className="w-5 h-5"/></a>
+              <a href="https://github.com/HORRIDBEAST/DecDemo" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors"><Github className="w-5 h-5"/></a>
+              <a href="https://x.com/rajasgd4067" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors"><Twitter className="w-5 h-5"/></a>
+              <a href="https://www.linkedin.com/in/rajas-deshpande-98670b285/" target="_blank" rel="noopener noreferrer" className="text-muted-foreground hover:text-primary transition-colors"><Linkedin className="w-5 h-5"/></a>
             </div>
           </div>
         </div>
