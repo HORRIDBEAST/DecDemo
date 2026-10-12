@@ -12,25 +12,25 @@
 
 *Solving the "Black Box" problem of traditional insurance through Multi-Agent AI and Blockchain*
 
-[Features](#-key-features) • [Architecture](#-multi-agent-workflow) • [Tech Stack](#-tech-stack) • [Installation](#-installation--setup) • [Documentation](#-project-structure)
+[Features](#-key-features) • [Architecture](#-multi-agent-workflow) • [Tech Stack](#-tech-stack) • [Run It Yourself](#-run-it-yourself-from-scratch) • [Documentation](#-project-structure)
 
 </div>
 
 ---
 
-## 🏆 Hackathon Submission (Monad Blitz Mumbai)
+## 🌐 Live Demo & Deployment
 
 | | |
 |---|---|
-| **Public repo** | <https://github.com/HORRIDBEAST/DecDemo> |
+| **Repository** | <https://github.com/HORRIDBEAST/DecDemo> |
 | **Live app** | <https://dec-demo.vercel.app/> |
 | **Network** | Monad Testnet (chain ID `10143`) |
 | **Contract address** | [`0xF48A757f1187c45923e39b39c85692755A1DFF0D`](https://testnet.monadscan.com/address/0xF48A757f1187c45923e39b39c85692755A1DFF0D) (ClaimRegistry, source verified) |
-| **Deployment tx** | [`0x55c51f39…b63ce5`](https://testnet.monadscan.com/tx/0x55c51f39d1eb3d7586ed000130e3f336e9ca6b8ad2c9ad3ddd1778b50fb63ce5) |
+| **Contract deployment tx** | [`0x55c51f39…b63ce5`](https://testnet.monadscan.com/tx/0x55c51f39d1eb3d7586ed000130e3f336e9ca6b8ad2c9ad3ddd1778b50fb63ce5) |
 | **Explorer** | <https://testnet.monadscan.com> |
 | **Run it locally** | [Run It Yourself](#-run-it-yourself-from-scratch) |
 
-Every AI claim decision is written to the `ClaimRegistry` contract on Monad, so each claim gets a verifiable on-chain transaction.
+Every AI claim decision is written to the `ClaimRegistry` contract on Monad Testnet, so each claim gets a verifiable on-chain transaction.
 
 ---
 
