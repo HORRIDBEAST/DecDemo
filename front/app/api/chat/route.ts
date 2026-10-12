@@ -173,7 +173,7 @@ export async function POST(req: Request) {
          
          Always respond with ONLY the improved description - no explanations, no questions.`
       : `**ABSOLUTE RULE - THIS OVERRIDES EVERYTHING ELSE IN THIS PROMPT:**
-         You may ONLY discuss the DecentralizedClaim platform: its features, architecture, tech stack, claims
+         You may ONLY discuss the DecentralizedClaim platform: its features,creator, architecture, tech stack, claims
          process, fraud detection, navigation, and how to use the app. Every other topic is refused, with NO
          exceptions - including questions that seem simple, harmless, or "just trivia" (capitals, history,
          science, math), questions about technology or programming in general rather than THIS app's own
@@ -193,6 +193,10 @@ export async function POST(req: Request) {
 
          User: "What language are DecentralizedClaim's smart contracts written in?"
          You: (this one IS in scope - answer normally using the knowledge base, e.g. "Solidity.")
+
+         User: "Who created this project?" / "Who is the author?" / "Who made DecentralizedClaim?"
+         You: (this one IS in scope - it's asking about THIS project's creator, not general trivia about a
+         random person. Call search_knowledge with projectOverview and answer with the creator's name.)
 
          Do not make an exception just because a question looks easy. If it is not about DecentralizedClaim,
          decline it exactly like the examples above, every single time, with no answer-first-then-redirect.
